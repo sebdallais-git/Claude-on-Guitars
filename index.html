@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vintage Guitar Collector</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #0f1117;
+            color: #e2e4e9;
+        }
+
+        /* ── header ── */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2.5rem;
+            border-bottom: 1px solid #1e2028;
+        }
+
+        .logo {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: -0.02em;
+        }
+
+        .github-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #8b8fa3;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .github-link:hover {
+            color: #fff;
+        }
+
+        .github-link svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* ── hero ── */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.12);
+            color: #818cf8;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            max-width: 700px;
+        }
+
+        h1 .highlight {
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            margin-top: 1.5rem;
+            font-size: 1.05rem;
+            color: #6b7080;
+            font-weight: 400;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        .name-tag {
+            margin-top: 2.5rem;
+            font-size: 0.9rem;
+            color: #4a4e5a;
+            font-weight: 500;
+        }
+
+        .name-tag span {
+            color: #8b8fa3;
+        }
+
+        /* ── footer ── */
+        footer {
+            border-top: 1px solid #1e2028;
+            padding: 2.5rem 2.5rem;
+            max-width: 720px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .footer-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #4a4e5a;
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-bio {
+            font-size: 0.9rem;
+            color: #6b7080;
+            line-height: 1.7;
+        }
+
+        .footer-bottom {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #1e2028;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            color: #3d4048;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">Vintage Guitar Collector</div>
+    <a href="https://github.com/sebdallais-git" target="_blank" class="github-link">
+        <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+        sebdallais-git
+    </a>
+</header>
+
+<main>
+    <div class="badge">Welcome</div>
+    <h1>The <span class="highlight">Agentic</span> Vintage Guitar Collector</h1>
+    <p class="subtitle">An AI-powered scraper that monitors vintage guitar marketplaces, filters by condition, and delivers the best finds straight to your inbox.</p>
+    <div class="name-tag">Built by <span>Sebastien DALLAIS</span></div>
+</main>
+
+<footer>
+    <div class="footer-label">À propos</div>
+    <p class="footer-bio">
+        Swiss-based global account manager, learning AI by doing. Passionate about vintage guitars — from rare acoustics to iconic electrics. This project is a hands-on experiment in building agentic tools that do the hunting while I focus on the finds.
+    </p>
+    <div class="footer-bottom">
+        <span>&copy; 2026 Sebastien DALLAIS</span>
+        <span>vintage-guitar-collector</span>
+    </div>
+</footer>
+
+</body>
+</html>

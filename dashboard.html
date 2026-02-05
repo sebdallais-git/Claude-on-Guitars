@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vintage Guitar Collector — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── reset & vars ── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1117;--card:#161822;--border:#1e2028;--card2:#1a1c24;
+  --text:#e2e4e9;--muted:#6b7080;--dim:#4a4e5a;
+  --indigo:#818cf8;--purple:#c084fc;
+  --green:#4ade80;--amber:#fbbf24;--red:#f87171;
+  --blue:#60a5fa;--orange:#fb923c;--pink:#f472b6;--teal:#34d399;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ── header ── */
+header{display:flex;justify-content:space-between;align-items:center;padding:1.2rem 2rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:100}
+.logo{font-size:.95rem;font-weight:600;color:#fff}
+.logo .g{background:linear-gradient(135deg,var(--indigo),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.gh{color:var(--muted);text-decoration:none;font-size:.78rem;font-weight:500;display:flex;align-items:center;gap:.35rem}
+.gh:hover{color:#fff}
+.gh svg{width:15px;height:15px;fill:currentColor}
+
+/* ── layout ── */
+.wrap{max-width:1140px;margin:0 auto;padding:2rem 1.5rem 3rem}
+.sec{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);margin-bottom:.9rem;display:flex;align-items:center;gap:.7rem}
+.sec::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── workflow ── */
+.wf-wrap{margin-bottom:2.4rem}
+.wf-wrap svg{width:100%;height:auto;display:block}
+
+/* ── kpis ── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:.9rem;margin-bottom:2.4rem}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.1rem 1rem}
+.kpi-l{font-size:.67rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem}
+.kpi-v{font-size:1.55rem;font-weight:700;color:#fff;letter-spacing:-.02em}
+.kpi-s{font-size:.68rem;color:var(--dim);margin-top:.25rem}
+.kpi.ci .kpi-v{color:var(--indigo)}.kpi.cg .kpi-v{color:var(--green)}.kpi.ca .kpi-v{color:var(--amber)}.kpi.cr .kpi-v{color:var(--red)}.kpi.cb .kpi-v{color:var(--blue)}.kpi.cp .kpi-v{color:var(--purple)}
+.bp-bg{background:var(--border);border-radius:3px;height:5px;margin-top:.55rem;overflow:hidden}
+.bp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--indigo),var(--purple))}
+
+/* ── charts grid ── */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2.4rem}
+@media(max-width:680px){.cg{grid-template-columns:1fr}}
+.cc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.3rem}
+.ct{font-size:.76rem;font-weight:600;color:var(--text);margin-bottom:.15rem}
+.cs{font-size:.65rem;color:var(--dim);margin-bottom:.85rem}
+
+/* brand bars */
+.bb{display:flex;align-items:center;gap:.5rem;margin-bottom:.48rem}
+.bb-l{font-size:.7rem;color:var(--muted);width:88px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.bb-t{flex:1;height:17px;background:var(--border);border-radius:3px;overflow:hidden}
+.bb-f{height:100%;border-radius:3px;display:flex;align-items:center;padding-left:6px;font-size:.66rem;font-weight:600;color:rgba(255,255,255,.9)}
+.bb-n{font-size:.66rem;color:var(--dim);width:20px;text-align:right;flex-shrink:0}
+
+/* donut */
+.dn-w{display:flex;align-items:center;gap:1.4rem}
+.dn-leg{display:flex;flex-direction:column;gap:.5rem}
+.lg{display:flex;align-items:center;gap:.45rem;font-size:.73rem;color:var(--muted)}
+.lg-d{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.lg-n{color:var(--text);font-weight:600;margin-left:auto;font-size:.72rem}
+
+/* vertical bars */
+.vb-w{display:flex;align-items:flex-end;gap:5px;height:145px}
+.vb-c{display:flex;flex-direction:column;align-items:center;flex:1;height:100%;justify-content:flex-end}
+.vb-r{width:100%;border-radius:3px 3px 0 0;min-height:2px}
+.vb-l{font-size:.58rem;color:var(--muted);margin-top:4px;text-align:center;white-space:nowrap}
+.vb-n{font-size:.62rem;color:var(--muted);margin-bottom:2px;font-weight:500}
+
+/* ── recommendations ── */
+.rc{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:2rem}
+.rc-s{overflow-x:auto}
+.rc-s::-webkit-scrollbar{height:3px}
+.rc-s::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+table.rt{width:100%;border-collapse:collapse}
+table.rt th{font-size:.64rem;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;padding:.8rem .9rem;text-align:left;border-bottom:1px solid var(--border);background:#141620;white-space:nowrap}
+table.rt td{font-size:.76rem;color:#c8cad0;padding:.68rem .9rem;border-bottom:1px solid #1a1c24;white-space:nowrap}
+table.rt tr:last-child td{border-bottom:none}
+table.rt tbody tr:hover td{background:rgba(129,140,248,.04)}
+.sb{display:inline-flex;align-items:center;justify-content:center;width:40px;height:23px;border-radius:5px;font-size:.71rem;font-weight:700}
+.sg{background:rgba(74,222,128,.14);color:var(--green)}.sy{background:rgba(251,191,36,.14);color:var(--amber)}.sr{background:rgba(248,113,113,.14);color:var(--red)}
+.rk{color:var(--indigo);font-weight:700}
+.pv{color:var(--text);font-weight:600}
+.pn{color:var(--dim);font-style:italic}
+
+/* dim slot */
+.ds{width:22px;height:5px;background:var(--border);border-radius:2px;overflow:hidden;display:inline-block}
+.df{height:100%;border-radius:2px}
+
+/* ── footer ── */
+footer{border-top:1px solid var(--border);padding:1.2rem 2rem;display:flex;justify-content:space-between;font-size:.7rem;color:var(--dim)}
+</style>
+</head>
+<body>
+
+<!-- ── header ── -->
+<header>
+  <div class="logo">Vintage Guitar <span class="g">Collector</span></div>
+  <a href="https://github.com/sebdallais-git" target="_blank" class="gh">
+    <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+    sebdallais-git
+  </a>
+</header>
+
+<div class="wrap">
+
+<!-- ── workflow ── -->
+<div class="sec">Agentic Workflow</div>
+<div class="wf-wrap">
+<svg viewBox="0 0 760 272" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0,0 9,3.5 0,7" fill="#4a4e5a"/>
+    </marker>
+    <linearGradient id="ag" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ── ROW 1 ── -->
+  <!-- retrofret.com -->
+  <rect x="4" y="10" width="116" height="64" rx="8" fill="#161822" stroke="#2a3a5c" stroke-width="1"/>
+  <text x="62" y="38" text-anchor="middle" fill="#60a5fa" font-size="10.5" font-weight="600" font-family="Inter,sans-serif">retrofret.com</text>
+  <text x="62" y="55" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">source</text>
+
+  <!-- arrow -->
+  <line x1="121" y1="42" x2="152" y2="42" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <!-- Scraper -->
+  <rect x="155" y="10" width="106" height="64" rx="8" fill="#161822" stroke="#282c3a" stroke-width="1"/>
+  <rect x="155" y="10" width="106" height="3" rx="2" fill="url(#ag)"/>
+  <text x="208" y="40" text-anchor="middle" fill="#e2e4e9" font-size="11" font-weight="600" font-family="Inter,sans-serif">Scraper</text>
+  <text x="208" y="56" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">every 5 min</text>
+
+  <!-- arrow -->
+  <line x1="262" y1="42" x2="291" y2="42" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <!-- listings.xlsx -->
+  <rect x="294" y="10" width="118" height="64" rx="8" fill="#1a1c24" stroke="#2a2d3a" stroke-width="1"/>
+  <text x="353" y="38" text-anchor="middle" fill="#e2e4e9" font-size="10.5" font-weight="600" font-family="Inter,sans-serif">listings.xlsx</text>
+  <text x="353" y="55" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">211 guitars</text>
+
+  <!-- arrow right -->
+  <line x1="413" y1="42" x2="449" y2="42" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <!-- Watchdog -->
+  <rect x="452" y="10" width="108" height="64" rx="8" fill="#161822" stroke="#282c3a" stroke-width="1"/>
+  <rect x="452" y="10" width="108" height="3" rx="2" fill="url(#ag)"/>
+  <text x="506" y="40" text-anchor="middle" fill="#e2e4e9" font-size="11" font-weight="600" font-family="Inter,sans-serif">Watchdog</text>
+  <text x="506" y="56" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">monitors xlsx</text>
+
+  <!-- arrow right -->
+  <line x1="561" y1="42" x2="596" y2="42" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <!-- Email + Telegram -->
+  <rect x="599" y="10" width="140" height="64" rx="8" fill="#161822" stroke="#282c3a" stroke-width="1"/>
+  <rect x="599" y="10" width="140" height="3" rx="2" fill="#4ade80"/>
+  <text x="669" y="36" text-anchor="middle" fill="#e2e4e9" font-size="10" font-weight="600" font-family="Inter,sans-serif">Email</text>
+  <text x="669" y="50" text-anchor="middle" fill="#4ade80" font-size="9" font-weight="500" font-family="Inter,sans-serif">+ Telegram</text>
+  <text x="669" y="66" text-anchor="middle" fill="#4a4e5a" font-size="7.5" font-family="Inter,sans-serif">notifications</text>
+
+  <!-- ── vertical arrow: listings → Scorer ── -->
+  <line x1="353" y1="75" x2="353" y2="148" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)" stroke-dasharray="4,3"/>
+
+  <!-- ── ROW 2 ── -->
+  <!-- collection.json -->
+  <rect x="4" y="152" width="120" height="64" rx="8" fill="#161822" stroke="#2a3a5c" stroke-width="1"/>
+  <text x="64" y="180" text-anchor="middle" fill="#60a5fa" font-size="10" font-weight="600" font-family="Inter,sans-serif">collection.json</text>
+  <text x="64" y="197" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">your guitars</text>
+
+  <!-- arrow -->
+  <line x1="125" y1="184" x2="153" y2="184" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <!-- Valuation -->
+  <rect x="156" y="152" width="108" height="64" rx="8" fill="#161822" stroke="#282c3a" stroke-width="1"/>
+  <rect x="156" y="152" width="108" height="3" rx="2" fill="url(#ag)"/>
+  <text x="210" y="182" text-anchor="middle" fill="#e2e4e9" font-size="11" font-weight="600" font-family="Inter,sans-serif">Valuation</text>
+  <text x="210" y="198" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">Reverb API</text>
+
+  <!-- arrow -->
+  <line x1="265" y1="184" x2="293" y2="184" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <!-- Scorer -->
+  <rect x="296" y="152" width="114" height="64" rx="8" fill="#161822" stroke="#282c3a" stroke-width="1"/>
+  <rect x="296" y="152" width="114" height="3" rx="2" fill="url(#ag)"/>
+  <text x="353" y="182" text-anchor="middle" fill="#e2e4e9" font-size="11" font-weight="600" font-family="Inter,sans-serif">Scorer</text>
+  <text x="353" y="198" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">3-dim scoring</text>
+
+  <!-- arrow right -->
+  <line x1="411" y1="184" x2="446" y2="184" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <!-- Recommendations -->
+  <rect x="449" y="152" width="152" height="64" rx="8" fill="#161822" stroke="#282c3a" stroke-width="1"/>
+  <rect x="449" y="152" width="152" height="3" rx="2" fill="#4ade80"/>
+  <text x="525" y="181" text-anchor="middle" fill="#e2e4e9" font-size="10.5" font-weight="600" font-family="Inter,sans-serif">Recommendations</text>
+  <text x="525" y="198" text-anchor="middle" fill="#4ade80" font-size="8.5" font-family="Inter,sans-serif">top 10 picks</text>
+
+  <!-- ── budget.json (small box) ── -->
+  <rect x="4" y="234" width="120" height="34" rx="7" fill="#161822" stroke="#2a3a5c" stroke-width="1"/>
+  <text x="64" y="256" text-anchor="middle" fill="#60a5fa" font-size="9.5" font-weight="600" font-family="Inter,sans-serif">budget.json  ·  $20k</text>
+
+  <!-- L-shaped arrow: budget → Scorer bottom -->
+  <path d="M 125,251 L 351,251 L 351,217" fill="none" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)" stroke-dasharray="4,3"/>
+
+  <!-- ── legend row ── -->
+  <!-- source dot -->
+  <rect x="4" y="265" width="8" height="8" rx="2" fill="#2a3a5c"/>
+  <text x="16" y="273" fill="#4a4e5a" font-size="7.5" font-family="Inter,sans-serif">data source</text>
+  <!-- agent dot -->
+  <rect x="90" y="265" width="8" height="8" rx="2" fill="url(#ag)"/>
+  <text x="102" y="273" fill="#4a4e5a" font-size="7.5" font-family="Inter,sans-serif">agent</text>
+  <!-- output dot -->
+  <rect x="158" y="265" width="8" height="8" rx="2" fill="#4ade80"/>
+  <text x="170" y="273" fill="#4a4e5a" font-size="7.5" font-family="Inter,sans-serif">output</text>
+  <!-- dashed -->
+  <line x1="222" y1="269" x2="258" y2="269" stroke="#4a4e5a" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="264" y="273" fill="#4a4e5a" font-size="7.5" font-family="Inter,sans-serif">data flow</text>
+</svg>
+</div>
+
+<!-- ── KPIs ── -->
+<div class="sec">At a Glance</div>
+<div class="kpis">
+  <div class="kpi ci">
+    <div class="kpi-l">Total Tracked</div>
+    <div class="kpi-v">211</div>
+    <div class="kpi-s">guitars on retrofret</div>
+  </div>
+  <div class="kpi cg">
+    <div class="kpi-l">Active</div>
+    <div class="kpi-v">208</div>
+    <div class="kpi-s">available now</div>
+  </div>
+  <div class="kpi ca">
+    <div class="kpi-l">On Hold</div>
+    <div class="kpi-v">3</div>
+    <div class="kpi-s">seller holding</div>
+  </div>
+  <div class="kpi cr">
+    <div class="kpi-l">Sold</div>
+    <div class="kpi-v">0</div>
+    <div class="kpi-s">confirmed sold</div>
+  </div>
+  <div class="kpi cb">
+    <div class="kpi-l">Avg Price</div>
+    <div class="kpi-v">$10.2k</div>
+    <div class="kpi-s">range $800 – $190k</div>
+  </div>
+  <div class="kpi cp">
+    <div class="kpi-l">Budget</div>
+    <div class="kpi-v">$20k</div>
+    <div class="kpi-s">$0 spent · $20k left</div>
+    <div class="bp-bg"><div class="bp-fill" style="width:0%"></div></div>
+  </div>
+</div>
+
+<!-- ── Charts ── -->
+<div class="sec">Market Breakdown</div>
+<div class="cg">
+  <!-- brands -->
+  <div class="cc">
+    <div class="ct">Top Brands</div>
+    <div class="cs">by listing count</div>
+    <div id="brands"></div>
+  </div>
+  <!-- types donut -->
+  <div class="cc">
+    <div class="ct">Guitar Types</div>
+    <div class="cs">acoustic · electric · bass</div>
+    <div class="dn-w">
+      <svg id="donut" width="120" height="120" viewBox="0 0 120 120"></svg>
+      <div class="dn-leg" id="dn-leg"></div>
+    </div>
+  </div>
+  <!-- decades -->
+  <div class="cc">
+    <div class="ct">By Decade</div>
+    <div class="cs">manufacturing year</div>
+    <div class="vb-w" id="decades"></div>
+  </div>
+  <!-- prices -->
+  <div class="cc">
+    <div class="ct">Price Distribution</div>
+    <div class="cs">listing price in USD</div>
+    <div class="vb-w" id="prices"></div>
+  </div>
+</div>
+
+<!-- ── Recommendations ── -->
+<div class="sec">Top 10 Recommendations</div>
+<div class="rc"><div class="rc-s">
+  <table class="rt">
+    <thead><tr>
+      <th>#</th>
+      <th>Brand</th>
+      <th>Model</th>
+      <th>Year</th>
+      <th style="text-align:right">Price</th>
+      <th>Score</th>
+      <th>Val · App · Fit</th>
+      <th style="text-align:right">+1 Year</th>
+      <th style="text-align:right">+2 Years</th>
+    </tr></thead>
+    <tbody id="recs"></tbody>
+  </table>
+</div></div>
+
+</div><!-- /wrap -->
+
+<footer>
+  <span>&copy; 2026 Sebastien DALLAIS</span>
+  <span>vintage-guitar-collector · data snapshot 2026-02-05</span>
+</footer>
+
+<!-- ── scripts ── -->
+<script>
+// ── data ──────────────────────────────────────────────────────
+const BRANDS = [
+  ["Gibson",61,"#818cf8"],["Fender",36,"#c084fc"],["C. F. Martin",9,"#60a5fa"],
+  ["Guild",7,"#4ade80"],["Ampeg",6,"#fb923c"],["Rickenbacker",5,"#f472b6"],
+  ["Micro-Frets",5,"#fbbf24"],["Epiphone",4,"#34d399"]
+];
+const TYPES = [
+  {l:"Electric",n:133,c:"#818cf8"},{l:"Acoustic",n:45,c:"#4ade80"},
+  {l:"Bass",n:22,c:"#60a5fa"},{l:"Unknown",n:11,c:"#4a4e5a"}
+];
+const DECADES = [
+  ["1920s",4],["1930s",19],["1940s",9],["1950s",23],["1960s",75],
+  ["1970s",23],["1980s",5],["1990s",8],["2000s",9],["2010s",11],["2020s",15]
+];
+const PRICES = [["$500–1k",1],["$1k–2k",23],["$2k–5k",64],["$5k–10k",55],["$10k+",58]];
+const RECS = [
+  {r:1,b:"Gibson",m:"EH-150",y:"1938",p:1950,s:85,sv:100,sa:100,sf:50,v1:2842,v2:3127},
+  {r:2,b:"Gibson",m:"BR-1 Ultratone",y:"1951",p:2250,s:79,sv:100,sa:80,sf:50,v1:3293,v2:3557},
+  {r:3,b:"Fender",m:"AV '57 Reissue Strat",y:"1957",p:3450,s:79,sv:100,sa:80,sf:50,v1:14377,v2:15527},
+  {r:4,b:"Gibson",m:"ES-330TC Thinline",y:"1960",p:6950,s:74,sv:87.5,sa:80,sf:50,v1:8625,v2:9315},
+  {r:5,b:"Fender",m:"Jazz Bass",y:"1964",p:10000,s:70.4,sv:78.6,sa:80,sf:50,v1:10980,v2:11858},
+  {r:6,b:"National",m:"—",y:"1938",p:1850,s:69.3,sv:98.3,sa:50,sf:50,v1:2371,v2:2489},
+  {r:7,b:"Magnatone",m:"G-70",y:"1955",p:800,s:67,sv:100,sa:40,sf:50,v1:1800,v2:1872},
+  {r:8,b:"Rickenbacker",m:"Model B-6",y:"c.1948",p:1750,s:66.8,sv:54.5,sa:100,sf:50,v1:1609,v2:1770},
+  {r:9,b:"Gibson",m:"ES-225 Thinline",y:"1955",p:6000,s:65.8,sv:67,sa:80,sf:50,v1:5997,v2:6477},
+  {r:10,b:"Gibson",m:"L-5 PN",y:"1947",p:null,s:65,sv:50,sa:100,sf:50,v1:7191,v2:7910}
+];
+
+// ── brands ─────────────────────────────────────────────────────
+(function(){
+  const max = BRANDS[0][1];
+  document.getElementById('brands').innerHTML = BRANDS.map(([name,n,c])=>
+    `<div class="bb">
+       <div class="bb-l">${name}</div>
+       <div class="bb-t"><div class="bb-f" style="width:${n/max*100}%;background:${c}">${n}</div></div>
+       <div class="bb-n">${n}</div>
+     </div>`
+  ).join('');
+})();
+
+// ── donut ──────────────────────────────────────────────────────
+(function(){
+  const total = TYPES.reduce((s,t)=>s+t.n,0);
+  const cx=60, cy=60, R=48, r=30;
+  let angle = -90, paths = '';
+  TYPES.forEach(t=>{
+    const sweep = (t.n/total)*360;
+    const s = angle*Math.PI/180, e = (angle+sweep)*Math.PI/180;
+    const lg = sweep > 180 ? 1 : 0;
+    const ox1=cx+R*Math.cos(s), oy1=cy+R*Math.sin(s);
+    const ox2=cx+R*Math.cos(e), oy2=cy+R*Math.sin(e);
+    const ix1=cx+r*Math.cos(e), iy1=cy+r*Math.sin(e);
+    const ix2=cx+r*Math.cos(s), iy2=cy+r*Math.sin(s);
+    paths += `<path d="M${ox1},${oy1} A${R},${R} 0 ${lg},1 ${ox2},${oy2} L${ix1},${iy1} A${r},${r} 0 ${lg},0 ${ix2},${iy2}Z" fill="${t.c}" opacity=".85"/>`;
+    angle += sweep;
+  });
+  paths += `<text x="60" y="56" text-anchor="middle" fill="#e2e4e9" font-size="15" font-weight="700" font-family="Inter,sans-serif">${total}</text>`;
+  paths += `<text x="60" y="72" text-anchor="middle" fill="#4a4e5a" font-size="8" font-family="Inter,sans-serif">total</text>`;
+  document.getElementById('donut').innerHTML = paths;
+  document.getElementById('dn-leg').innerHTML = TYPES.map(t=>
+    `<div class="lg"><div class="lg-d" style="background:${t.c}"></div>${t.l}<span class="lg-n">${t.n}</span></div>`
+  ).join('');
+})();
+
+// ── vertical bars (generic) ─────────────────────────────────────
+function vbars(id, data, colorFn){
+  const max = Math.max(...data.map(d=>d[1]));
+  document.getElementById(id).innerHTML = data.map(([label,val])=>{
+    const h = val > 0 ? Math.max(8, (val/max)*128) : 2;
+    return `<div class="vb-c">
+              <div class="vb-n">${val}</div>
+              <div class="vb-r" style="height:${h}px;background:${colorFn(val,max)}"></div>
+              <div class="vb-l">${label}</div>
+            </div>`;
+  }).join('');
+}
+vbars('decades', DECADES, (v,m)=>`rgba(129,140,248,${.3+v/m*.7})`);
+vbars('prices',  PRICES,  (v,m)=>`rgba(192,132,252,${.3+v/m*.7})`);
+
+// ── recommendations ────────────────────────────────────────────
+(function(){
+  const f$ = n => n!=null ? '$'+Number(n).toLocaleString() : 'N/A';
+  function slot(pct,color){
+    return `<span class="ds"><span class="df" style="width:${pct}%;background:${color}"></span></span>`;
+  }
+  document.getElementById('recs').innerHTML = RECS.map(r=>{
+    const sc = r.s>=80?'sg':r.s>=60?'sy':'sr';
+    return `<tr>
+      <td class="rk">${r.r}</td>
+      <td>${r.b}</td>
+      <td style="color:var(--muted)">${r.m}</td>
+      <td>${r.y}</td>
+      <td style="text-align:right" class="${r.p!=null?'pv':'pn'}">${f$(r.p)}</td>
+      <td><span class="sb ${sc}">${r.s}</span></td>
+      <td style="display:flex;gap:3px;align-items:center">
+        ${slot(r.sv,'#818cf8')}${slot(r.sa,'#4ade80')}${slot(r.sf,'#60a5fa')}
+      </td>
+      <td class="pv" style="text-align:right">${f$(r.v1)}</td>
+      <td class="pv" style="text-align:right">${f$(r.v2)}</td>
+    </tr>`;
+  }).join('');
+})();
+</script>
+</body>
+</html>
