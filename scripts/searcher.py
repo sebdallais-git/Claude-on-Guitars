@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
-searcher — crawls all guitars on retrofret.com every 5 minutes.
+searcher — crawls vintage guitar sites every 5 minutes.
+
+Supports:
+- retrofret.com (USA, USD)
+- woodstore.fr (France, EUR)
+
 Filters by condition >= excellent-.  Skips "on hold" items.
 Writes results to an Excel sheet, appending new hits sorted by ProductID.
 Caches conditions so each product page is fetched only once.
@@ -24,6 +29,15 @@ except ImportError:
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
+
+# Import woodstore scraper
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "scrapers"))
+try:
+    import woodstore
+    WOODSTORE_ENABLED = True
+except ImportError:
+    WOODSTORE_ENABLED = False
+    print("  [!] woodstore.fr scraper not available")
 
 # ── config ───────────────────────────────────────────────────────
 BASE_URL   = "https://www.retrofret.com"
@@ -157,11 +171,17 @@ def load_seen_ids():
     if os.path.exists(OUTPUT_FILE):
         wb = load_workbook(OUTPUT_FILE, read_only=True)
         ws = wb.active
-        for row in ws.iter_rows(min_row=2, max_col=10, values_only=True):
-            url = str(row[9]) if row[9] else ""
-            m   = re.search(r"ProductID=(\d+)", url)
+        for row in ws.iter_rows(min_row=2, max_col=11, values_only=True):
+            url = str(row[10]) if row[10] else ""  # URL is now column 11 (index 10)
+            # Handle both retrofret ProductID and woodstore slugs
+            m = re.search(r"ProductID=(\d+)", url)
             if m:
                 seen.add(m.group(1))
+            else:
+                # For woodstore and other sites, use the full URL as ID
+                m = re.search(r"/products?/([^/?]+)", url)
+                if m:
+                    seen.add(m.group(1))
         wb.close()
     return seen
 
@@ -208,9 +228,9 @@ def load_sold_ids():
     if os.path.exists(OUTPUT_FILE):
         wb = load_workbook(OUTPUT_FILE, read_only=True)
         ws = wb.active
-        for row in ws.iter_rows(min_row=2, max_col=12, values_only=True):
-            if row[11] is not None:                          # col 12 = Sold Date
-                url = str(row[9]) if row[9] else ""
+        for row in ws.iter_rows(min_row=2, max_col=13, values_only=True):
+            if row[12] is not None:                          # col 13 = Sold Date
+                url = str(row[10]) if row[10] else ""  # URL is now column 11 (index 10)
                 m   = re.search(r"ProductID=(\d+)", url)
                 if m:
                     sold.add(m.group(1))
@@ -270,20 +290,40 @@ def parse_listings(soup):
 
 
 def scrape_all():
+    """Scrape all configured sites and combine results."""
     all_g = {}
+
+    # RetroFret
     for cat in CATEGORIES:
         soup = fetch_soup(f"{BASE_URL}{cat}")
         if not soup:
             continue
         pages = max_page(soup)
         for g in parse_listings(soup):
-            all_g.setdefault(g["id"], g)
+            g["source"] = "retrofret.com"
+            all_g.setdefault(("retrofret", g["id"]), g)
         for p in range(2, pages + 1):
             time.sleep(0.3)
             soup = fetch_soup(f"{BASE_URL}{cat}Default.asp?Page={p}")
             if soup:
                 for g in parse_listings(soup):
-                    all_g.setdefault(g["id"], g)
+                    g["source"] = "retrofret.com"
+                    all_g.setdefault(("retrofret", g["id"]), g)
+
+    # Woodstore.fr
+    if WOODSTORE_ENABLED:
+        try:
+            print("  also scraping woodstore.fr …")
+            woodstore_guitars = woodstore.scrape_all()
+            for g in woodstore_guitars:
+                g["source"] = "woodstore.fr"
+                # Woodstore guitars don't need condition fetching - assume good condition
+                g.setdefault("condition", "excellent")
+                all_g.setdefault(("woodstore", g["id"]), g)
+            print(f"  + {len(woodstore_guitars)} from woodstore.fr")
+        except Exception as e:
+            print(f"  [!] woodstore error: {e}")
+
     return list(all_g.values())
 
 
@@ -356,11 +396,11 @@ def reverb_price(brand, model, year):
 
 # ── Excel output ─────────────────────────────────────────────────
 XLSX_HEADERS = [
-    "Date Arrived", "Brand / Make", "Model",
-    "Acoustic / Electric", "Year", "Price (USD)", "Reverb Low $", "Reverb High $",
+    "Date Arrived", "Source", "Brand / Make", "Model",
+    "Acoustic / Electric", "Year", "Price", "Reverb Low $", "Reverb High $",
     "Condition", "URL", "On Hold", "Sold Date",
 ]
-XLSX_WIDTHS  = [14, 22, 26, 18, 10, 14, 14, 14, 14, 65, 12, 14]
+XLSX_WIDTHS  = [14, 18, 22, 26, 18, 10, 14, 14, 14, 14, 65, 12, 14]
 HEADER_FILL  = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
 HEADER_FONT  = Font(bold=True, color="FFFFFF", size=11)
 URL_FONT     = Font(color="0563C1", underline="single", size=10)
@@ -416,23 +456,30 @@ def append_new(guitars, seen_ids):
         price = extract_price(g["price"])
         cond  = g.get("condition") or "unknown"
 
+        source = g.get("source", "retrofret.com")
+
         ws.cell(row=row, column=1, value=today)
         ws.cell(row=row, column=1).number_format = "YYYY-MM-DD"
-        ws.cell(row=row, column=2, value=brand)
-        ws.cell(row=row, column=3, value=model)
-        ws.cell(row=row, column=4, value=gtype)
-        ws.cell(row=row, column=5, value=year)
+        ws.cell(row=row, column=2, value=source)
+        ws.cell(row=row, column=3, value=brand)
+        ws.cell(row=row, column=4, value=model)
+        ws.cell(row=row, column=5, value=gtype)
+        ws.cell(row=row, column=6, value=year)
         if price is not None:
-            ws.cell(row=row, column=6, value=price)
-            ws.cell(row=row, column=6).number_format = "$#,##0.00"
+            ws.cell(row=row, column=7, value=price)
+            # Use appropriate currency format based on source
+            if "woodstore" in source:
+                ws.cell(row=row, column=7).number_format = "€#,##0.00"
+            else:
+                ws.cell(row=row, column=7).number_format = "$#,##0.00"
         if rev_lo is not None:
-            ws.cell(row=row, column=7, value=rev_lo)
-            ws.cell(row=row, column=7).number_format = "$#,##0.00"
-        if rev_hi is not None:
-            ws.cell(row=row, column=8, value=rev_hi)
+            ws.cell(row=row, column=8, value=rev_lo)
             ws.cell(row=row, column=8).number_format = "$#,##0.00"
-        ws.cell(row=row, column=9, value=cond)
-        url_cell          = ws.cell(row=row, column=10, value=g["url"])
+        if rev_hi is not None:
+            ws.cell(row=row, column=9, value=rev_hi)
+            ws.cell(row=row, column=9).number_format = "$#,##0.00"
+        ws.cell(row=row, column=10, value=cond)
+        url_cell          = ws.cell(row=row, column=11, value=g["url"])
         url_cell.font     = URL_FONT
         url_cell.hyperlink = g["url"]
 
@@ -453,13 +500,13 @@ def mark_on_hold(on_hold_ids):
     changed = False
     today   = date.today().isoformat()
     for row in range(2, ws.max_row + 1):
-        url = str(ws.cell(row=row, column=10).value or "")
+        url = str(ws.cell(row=row, column=11).value or "")  # URL is now column 11
         m   = re.search(r"ProductID=(\d+)", url)
-        if m and m.group(1) in on_hold_ids and ws.cell(row=row, column=11).value is None:
-            ws.cell(row=row, column=11, value=today)
+        if m and m.group(1) in on_hold_ids and ws.cell(row=row, column=12).value is None:
+            ws.cell(row=row, column=12, value=today)  # On Hold is now column 12
             changed = True
-            print(f"  [on hold] {ws.cell(row=row, column=2).value}  "
-                  f"{ws.cell(row=row, column=3).value}")
+            print(f"  [on hold] {ws.cell(row=row, column=3).value}  "  # Brand is now column 3
+                  f"{ws.cell(row=row, column=4).value}")  # Model is now column 4
     if changed:
         wb.save(OUTPUT_FILE)
         print()
@@ -473,17 +520,17 @@ def backfill_reverb(no_data_ids):
     ws = wb.active
     to_fill = []
     for row in range(2, ws.max_row + 1):
-        if ws.cell(row=row, column=7).value is not None:
+        if ws.cell(row=row, column=8).value is not None:  # Reverb Low is now column 8
             continue
-        url = str(ws.cell(row=row, column=10).value or "")
+        url = str(ws.cell(row=row, column=11).value or "")  # URL is now column 11
         m   = re.search(r"ProductID=(\d+)", url)
         pid = m.group(1) if m else str(row)
         if pid in no_data_ids:
             continue
         to_fill.append((row, pid,
-                        str(ws.cell(row=row, column=2).value or ""),
-                        str(ws.cell(row=row, column=3).value or ""),
-                        str(ws.cell(row=row, column=5).value or "")))
+                        str(ws.cell(row=row, column=3).value or ""),  # Brand is now column 3
+                        str(ws.cell(row=row, column=4).value or ""),  # Model is now column 4
+                        str(ws.cell(row=row, column=6).value or "")))  # Year is now column 6
     if not to_fill:
         return no_data_ids
     print(f"  backfilling Reverb for {len(to_fill)} entries …")
@@ -493,10 +540,10 @@ def backfill_reverb(no_data_ids):
     changed = False
     for (row, pid, brand, model, year), (lo, hi) in zip(to_fill, results):
         if lo is not None:
-            ws.cell(row=row, column=7, value=lo)
-            ws.cell(row=row, column=7).number_format = "$#,##0.00"
-            ws.cell(row=row, column=8, value=hi)
+            ws.cell(row=row, column=8, value=lo)  # Reverb Low is now column 8
             ws.cell(row=row, column=8).number_format = "$#,##0.00"
+            ws.cell(row=row, column=9, value=hi)  # Reverb High is now column 9
+            ws.cell(row=row, column=9).number_format = "$#,##0.00"
             changed = True
             print(f"  [reverb] {brand} {model} → ${lo:,.0f} – ${hi:,.0f}")
         else:
@@ -529,17 +576,17 @@ def check_sold(seen_ids, current_ids, sold_ids, candidates):
 
 
 def ensure_sold_header(ws):
-    """Add 'Sold Date' header to col 12 if missing (pre-existing workbooks)."""
-    if ws.cell(row=1, column=12).value is None:
-        cell           = ws.cell(row=1, column=12, value="Sold Date")
+    """Add 'Sold Date' header to col 13 if missing (pre-existing workbooks)."""
+    if ws.cell(row=1, column=13).value is None:
+        cell           = ws.cell(row=1, column=13, value="Sold Date")
         cell.font      = HEADER_FONT
         cell.fill      = HEADER_FILL
         cell.alignment = Alignment(horizontal="center")
-        ws.column_dimensions[get_column_letter(12)].width = 14
+        ws.column_dimensions[get_column_letter(13)].width = 14
 
 
 def mark_sold_batch(pids):
-    """Write today's date into 'Sold Date' (col 12) for the given ProductIDs."""
+    """Write today's date into 'Sold Date' (col 13) for the given ProductIDs."""
     if not os.path.exists(OUTPUT_FILE) or not pids:
         return
     wb      = load_workbook(OUTPUT_FILE)
@@ -548,12 +595,12 @@ def mark_sold_batch(pids):
     today   = date.today().isoformat()
     pid_set = set(pids)
     for row in range(2, ws.max_row + 1):
-        url = str(ws.cell(row=row, column=10).value or "")
+        url = str(ws.cell(row=row, column=11).value or "")  # URL is now column 11
         m   = re.search(r"ProductID=(\d+)", url)
-        if m and m.group(1) in pid_set and ws.cell(row=row, column=12).value is None:
-            ws.cell(row=row, column=12, value=today)
-            print(f"  [sold] {ws.cell(row=row, column=2).value}  "
-                  f"{ws.cell(row=row, column=3).value}")
+        if m and m.group(1) in pid_set and ws.cell(row=row, column=13).value is None:  # Sold Date is now column 13
+            ws.cell(row=row, column=13, value=today)
+            print(f"  [sold] {ws.cell(row=row, column=3).value}  "  # Brand is now column 3
+                  f"{ws.cell(row=row, column=4).value}")  # Model is now column 4
     wb.save(OUTPUT_FILE)
     print()
 
@@ -562,22 +609,37 @@ def mark_sold_batch(pids):
 def display(guitars):
     now = datetime.now().strftime("%Y-%m-%d  %H:%M:%S")
     print(f"\n{'─'*80}")
-    print(f"  RETROFRET — All Guitars  >=excellent-              {now}")
+    print(f"  MULTI-SITE — All Guitars  >=excellent-              {now}")
     print(f"{'─'*80}")
     if not guitars:
         print("  (none passed the condition filter)")
-    for i, g in enumerate(guitars, 1):
-        brand, model = extract_brand_model(g["title"])
-        year         = extract_year(g["title"])
-        cond         = g.get("condition") or "unknown"
-        hold = "  ON HOLD" if g.get("on_hold") else ""
-        print(f"  {i:3}.  {brand:22} {model:24} {year:>8}  {g['price']:>10}  [{cond}]{hold}")
+
+    # Group by source for display
+    by_source = {}
+    for g in guitars:
+        source = g.get("source", "unknown")
+        by_source.setdefault(source, []).append(g)
+
+    for source, source_guitars in by_source.items():
+        print(f"\n  [{source}] {len(source_guitars)} guitars")
+        for i, g in enumerate(source_guitars[:10], 1):  # Show first 10 per source
+            brand, model = extract_brand_model(g["title"])
+            year         = extract_year(g["title"])
+            cond         = g.get("condition") or "unknown"
+            hold = "  ON HOLD" if g.get("on_hold") else ""
+            print(f"  {i:3}.  {brand:22} {model:24} {year:>8}  {g['price']:>10}  [{cond}]{hold}")
+
     print(f"{'─'*80}\n")
 
 
 # ── main ─────────────────────────────────────────────────────────
 def main():
-    print("\n  searcher started — all guitars on retrofret.com  (every 5 min)")
+    sites = ["retrofret.com"]
+    if WOODSTORE_ENABLED:
+        sites.append("woodstore.fr")
+
+    print(f"\n  searcher started — multi-site scraper (every 5 min)")
+    print(f"  sites   → {', '.join(sites)}")
     print(f"  output  → {OUTPUT_FILE}")
     print(f"  cache   → {CACHE_FILE}\n")
 

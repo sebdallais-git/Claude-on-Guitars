@@ -49,6 +49,13 @@ python3 scripts/valuation.py
 ├── outputs/                 # generated files (gitignored)
 │   └── listings.xlsx        # the main spreadsheet
 ├── scripts/                 # all Python scripts
+│   ├── scrapers/            # site-specific scrapers (modular)
+│   │   ├── woodstore.py     # ✅ woodstore.fr (Paris) - working
+│   │   ├── guitarpoint.py   # ⚠️ guitarpoint.de - template (403 blocked)
+│   │   ├── rudymusic.py     # ⚠️ rudymusic.com - template (SSL issues)
+│   │   ├── README.md        # guide for adding new sites
+│   │   ├── SETUP_GUITARPOINT.md  # guitarpoint.de setup instructions
+│   │   └── SETUP_MULTI_SITE.md   # status of all scrapers
 │   ├── searcher.py          # crawls retrofret every 5 min
 │   ├── watchdog.py          # keeps searcher alive, sends notifications
 │   ├── messenger.py         # Telegram Bot API wrapper
@@ -73,6 +80,22 @@ python3 scripts/valuation.py
 | Notification tracking after both channels | Email and Telegram are attempted; ID is marked notified only afterwards, so a partial failure retries next cycle |
 | budget.json instead of config.py | JSON is easier to edit programmatically (e.g. from a script or CI) and avoids importing Python |
 | collection.json instead of collection.xlsx | Simpler read/write in valuation.py; valuation results are still surfaced in the Excel Recommendations sheet |
+
+---
+
+## Adding new sites
+
+The scraper currently supports retrofret.com. Additional sites can be added using the modular scraper architecture:
+
+1. **Create a new scraper** in `scripts/scrapers/` (use `guitarpoint.py` as template)
+2. **Inspect the target site** to find:
+   - Category URLs for different guitar types
+   - HTML structure and CSS selectors for product listings
+   - Product detail page format and condition patterns
+3. **Test the scraper** standalone: `python3 scripts/scrapers/your_site.py`
+4. **Integrate with watchdog** once working (add import and merge results)
+
+See `scripts/scrapers/SETUP_GUITARPOINT.md` for detailed instructions.
 
 ---
 

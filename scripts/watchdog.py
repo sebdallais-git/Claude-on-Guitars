@@ -37,6 +37,7 @@ except ImportError:
     sys.exit(1)
 
 import messenger           # Telegram (optional — needs env vars; see setup)
+import currency            # Currency conversion EUR ↔ USD
 
 # ── config ────────────────────────────────────────────────────────
 _SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
@@ -124,12 +125,63 @@ def read_entries():
     try:
         wb = load_workbook(XLSX_PATH, read_only=True, data_only=True)
         ws = wb.active
+
+        # Check if we have Source column (new multi-site format)
+        headers = [cell.value for cell in ws[1]]
+        has_source = "Source" in headers
+
         rows = []
-        for row in ws.iter_rows(min_row=2, max_col=12, values_only=True):
-            url = str(row[9]) if row[9] else ""
-            m   = re.search(r"ProductID=(\d+)", url)
-            if not m:
+        max_col = 13 if has_source else 12
+
+        for row in ws.iter_rows(min_row=2, max_col=max_col, values_only=True):
+            if not row:
                 continue
+
+            # Handle both old (retrofret-only) and new (multi-site) formats
+            if has_source:
+                source = str(row[1] or "retrofret.com")
+                brand = str(row[2] or "")
+                model = str(row[3] or "")
+                type_ = str(row[4] or "")
+                year = str(row[5] or "")
+                price_raw = row[6]
+                reverb_low = row[7]
+                reverb_hi = row[8]
+                condition = str(row[9] or "")
+                url = str(row[10] or "")
+                on_hold = row[11] is not None
+                sold = row[12] is not None
+            else:
+                source = "retrofret.com"
+                brand = str(row[1] or "")
+                model = str(row[2] or "")
+                type_ = str(row[3] or "")
+                year = str(row[4] or "")
+                price_raw = row[5]
+                reverb_low = row[6]
+                reverb_hi = row[7]
+                condition = str(row[8] or "")
+                url = str(row[9] or "")
+                on_hold = row[10] is not None
+                sold = row[11] is not None
+
+            if not url:
+                continue
+
+            # Extract ID from URL (different patterns for different sites)
+            row_id = None
+            m = re.search(r"ProductID=(\d+)", url)
+            if m:
+                row_id = m.group(1)
+            else:
+                # For woodstore and other sites, use URL slug
+                m = re.search(r"/(?:products?|guitares)/p/([^/?]+)", url)
+                if m:
+                    row_id = m.group(1)
+                else:
+                    continue  # Skip if we can't extract an ID
+
+            # Parse date
             date_raw = row[0]
             if isinstance(date_raw, (datetime, date)):
                 date_arrived = date_raw.date() if isinstance(date_raw, datetime) else date_raw
@@ -141,20 +193,30 @@ def read_entries():
             else:
                 date_arrived = None
 
+            # Determine currency based on source
+            curr = "EUR" if "woodstore" in source.lower() else "USD"
+
+            # Format prices with currency
+            price_str = currency.format_price(price_raw, curr, show_currency=False) if price_raw else "N/A"
+            price_with_conv = currency.format_with_conversion(price_raw, curr) if price_raw else "N/A"
+
             rows.append({
-                "id":           m.group(1),
+                "id":           row_id,
+                "source":       source,
+                "currency":     curr,
                 "date_arrived": date_arrived,
-                "brand":        str(row[1] or ""),
-                "model":        str(row[2] or ""),
-                "type":         str(row[3] or ""),
-                "year":         str(row[4] or ""),
-                "price":        fmt_price(row[5]),
-                "reverb_low":   fmt_price(row[6]),
-                "reverb_hi":    fmt_price(row[7]),
-                "condition":    str(row[8] or ""),
+                "brand":        brand,
+                "model":        model,
+                "type":         type_,
+                "year":         year,
+                "price":        price_str,
+                "price_converted": price_with_conv,
+                "reverb_low":   fmt_price(reverb_low),
+                "reverb_hi":    fmt_price(reverb_hi),
+                "condition":    condition,
                 "url":          url,
-                "on_hold":      row[10] is not None,
-                "sold":         row[11] is not None,
+                "on_hold":      on_hold,
+                "sold":         sold,
             })
         wb.close()
         return rows
@@ -164,32 +226,52 @@ def read_entries():
 
 
 # ── image ─────────────────────────────────────────────────────────
-def fetch_listing_image(pid):
-    """Download the main product photo.  Returns (bytes, subtype) or (None, None)."""
-    url = f"{RETROFRET_BASE}/images/{pid}_Guitar/{pid}_01.jpg"
+def fetch_listing_image(entry):
+    """
+    Download the main product photo for any source.
+    Returns (bytes, subtype) or (None, None).
+    """
+    source = entry.get("source", "retrofret.com")
+    pid = entry["id"]
+
+    # Different image URL patterns per site
+    if "retrofret" in source.lower():
+        url = f"{RETROFRET_BASE}/images/{pid}_Guitar/{pid}_01.jpg"
+    elif "woodstore" in source.lower():
+        # Woodstore uses Squarespace CDN - difficult to predict image URLs
+        # Skip image for now
+        return None, None
+    else:
+        # Unknown source - skip image
+        return None, None
+
     try:
         resp = requests.get(url, headers=HTTP_HEADERS, timeout=10)
         resp.raise_for_status()
         subtype = resp.headers.get("Content-Type", "image/jpeg").split("/")[-1]
         return resp.content, subtype
     except Exception as e:
-        log(f"image fetch failed ({pid}): {e}")
+        log(f"image fetch failed ({source}/{pid}): {e}")
         return None, None
 
 
 # ── email ─────────────────────────────────────────────────────────
 def _build_msg(entry, on_hold=False, img_data=None, img_subtype="jpeg"):
+    source = entry.get("source", "retrofret.com")
+    source_name = source.replace(".com", "").replace(".fr", "").title()
     tag     = " ON HOLD" if on_hold else ""
+
     subject = (
-        f"[RetroFret{tag}] {entry['brand']} {entry['model']} "
-        f"{entry['year']} — {entry['price']} — {entry['condition']}"
+        f"[{source_name}{tag}] {entry['brand']} {entry['model']} "
+        f"{entry['year']} — {entry.get('price_converted', entry['price'])} — {entry['condition']}"
     )
     details = (
+        f"Source:    {source}\n"
         f"Brand:     {entry['brand']}\n"
         f"Model:     {entry['model']}\n"
         f"Year:      {entry['year']}\n"
         f"Type:      {entry['type']}\n"
-        f"Price:     {entry['price']}\n" +
+        f"Price:     {entry.get('price_converted', entry['price'])}\n" +
         (f"Reverb:    {entry['reverb_low']} – {entry['reverb_hi']}\n"
          if entry.get("reverb_low") and entry["reverb_low"] != "N/A" else "") +
         f"Condition: {entry['condition']}\n"
@@ -325,7 +407,7 @@ def main():
         if pending:
             # fetch listing photos in parallel
             with ThreadPoolExecutor(max_workers=5) as pool:
-                img_futures = [pool.submit(fetch_listing_image, e["id"]) for e, _ in pending]
+                img_futures = [pool.submit(fetch_listing_image, e) for e, _ in pending]
                 images      = [f.result() for f in img_futures]
 
             # email batch
