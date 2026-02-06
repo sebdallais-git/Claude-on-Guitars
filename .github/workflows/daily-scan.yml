@@ -23,22 +23,19 @@ jobs:
         run: |
           mkdir -p data outputs
           # Use example files if real ones don't exist
-          if [ ! -f data/budget.json ]; then
-            cp data/budget.json.example data/budget.json
-          fi
-          if [ ! -f data/collection.json ]; then
-            cp data/collection.json.example data/collection.json
-          fi
+          for f in budget.json collection.json; do
+            if [ ! -f "data/$f" ] && [ -f "data/${f}.example" ]; then
+              cp "data/${f}.example" "data/$f"
+              echo "Created data/$f from example"
+            fi
+          done
 
       - name: Run scraper (one-shot)
-        run: |
-          # Run searcher for one iteration
-          timeout 120 python3 scripts/searcher.py || true
+        run: python3 scripts/searcher.py --once
         continue-on-error: true
 
       - name: Run scorer (refresh recommendations)
         env:
-          # secrets configured in GitHub → Settings → Secrets
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |

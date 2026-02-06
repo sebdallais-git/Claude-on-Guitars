@@ -634,11 +634,14 @@ def display(guitars):
 
 # ── main ─────────────────────────────────────────────────────────
 def main():
+    one_shot = "--once" in sys.argv
+
     sites = ["retrofret.com"]
     if WOODSTORE_ENABLED:
         sites.append("woodstore.fr")
 
-    print(f"\n  searcher started — multi-site scraper (every 5 min)")
+    mode = "one-shot" if one_shot else "every 5 min"
+    print(f"\n  searcher started — multi-site scraper ({mode})")
     print(f"  sites   → {', '.join(sites)}")
     print(f"  output  → {OUTPUT_FILE}")
     print(f"  cache   → {CACHE_FILE}\n")
@@ -692,6 +695,10 @@ def main():
 
         # retry any rows still missing Reverb prices
         reverb_no_data = backfill_reverb(reverb_no_data)
+
+        if one_shot:
+            print("  --once mode: done.")
+            break
 
         print(f"  next crawl in 5 min …")
         time.sleep(INTERVAL)

@@ -45,35 +45,48 @@ def _load_budget():
 
 # ── read active listings ──────────────────────────────────────────
 def read_active_listings():
-    """Return listings from retrofret.xlsx that are not sold and not on hold."""
+    """Return listings from listings.xlsx that are not sold and not on hold.
+
+    Column layout (13 cols, 0-indexed):
+      0: Date Arrived  1: Source       2: Brand/Make   3: Model
+      4: Type          5: Year         6: Price        7: Reverb Low
+      8: Reverb High   9: Condition   10: URL         11: On Hold
+     12: Sold Date
+    """
     if not os.path.exists(XLSX_PATH):
         return []
     wb = load_workbook(XLSX_PATH, read_only=True, data_only=True)
     ws = wb.active
     listings = []
-    for row in ws.iter_rows(min_row=2, max_col=12, values_only=True):
-        url = str(row[9]) if row[9] else ""
-        m   = re.search(r"ProductID=(\d+)", url)
-        if not m:
-            continue
-        if row[10] is not None or row[11] is not None:   # on hold or sold
+    for row in ws.iter_rows(min_row=2, max_col=13, values_only=True):
+        url = str(row[10]) if row[10] else ""          # col 11 = URL
+        # Support both retrofret ProductID and woodstore/other slug URLs
+        m = re.search(r"ProductID=(\d+)", url)
+        if m:
+            pid = m.group(1)
+        else:
+            m2 = re.search(r"/products?/([^/?]+)", url)
+            if not m2:
+                continue
+            pid = m2.group(1)
+        if row[11] is not None or row[12] is not None:  # On Hold or Sold Date
             continue
         price = None
-        if row[5] is not None:
+        if row[6] is not None:                           # col 7 = Price
             try:
-                price = float(row[5])
+                price = float(row[6])
             except (ValueError, TypeError):
                 pass
         listings.append({
-            "id":         m.group(1),
-            "brand":      str(row[1] or ""),
-            "model":      str(row[2] or ""),
-            "type":       str(row[3] or ""),
-            "year":       str(row[4] or ""),
+            "id":         pid,
+            "brand":      str(row[2] or ""),             # col 3 = Brand
+            "model":      str(row[3] or ""),             # col 4 = Model
+            "type":       str(row[4] or ""),             # col 5 = Type
+            "year":       str(row[5] or ""),             # col 6 = Year
             "price":      price,
-            "reverb_lo":  row[6],
-            "reverb_hi":  row[7],
-            "condition":  str(row[8] or ""),
+            "reverb_lo":  row[7],                        # col 8 = Reverb Low
+            "reverb_hi":  row[8],                        # col 9 = Reverb High
+            "condition":  str(row[9] or ""),             # col 10 = Condition
             "url":        url,
         })
     wb.close()
