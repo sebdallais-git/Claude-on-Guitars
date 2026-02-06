@@ -1,5 +1,6 @@
 # ── data & state (runtime) ─────────────────────────────────
-data/
+data/*
+!data/*.example
 outputs/
 
 # ── root-level runtime state ────────────────────────────────
