@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Top 100 Guitarists — Vintage Guitar Collector</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e2e4e9;padding:2rem}
+.wrap{max-width:900px;margin:0 auto}
+
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2.5rem;padding-bottom:1rem;border-bottom:1px solid #1e2028}
+.title{font-size:1.5rem;font-weight:700;color:#fff}
+.back{color:#818cf8;text-decoration:none;font-size:.9rem;font-weight:500;padding:.5rem 1rem;background:#161822;border-radius:6px;cursor:pointer;transition:background .2s,color .2s}
+.back:hover{background:#1e2030;color:#a5b4fc}
+
+.table-wrap{background:#161822;border:1px solid #1e2028;border-radius:8px;overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{background:#1a1c23;padding:.85rem 1rem;text-align:left;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#8b8fa3;border-bottom:1px solid #1e2028;white-space:nowrap}
+td{padding:.75rem 1rem;border-bottom:1px solid #1e2028;font-size:.85rem}
+tr:last-child td{border-bottom:none}
+tr:hover{background:#1a1c23}
+
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-weight:700;font-size:.8rem}
+.rank-top10{background:rgba(250,204,21,.15);color:#facc15}
+.rank-top25{background:rgba(129,140,248,.15);color:#818cf8}
+.rank-rest{background:#1e2028;color:#6b7080}
+
+.guitarist-name{font-weight:600;color:#fff}
+.guitars{color:#9ca3af;font-size:.8rem}
+
+.loading{padding:4rem;text-align:center;color:#6b7080}
+
+@media(max-width:768px){
+    .title{font-size:1.2rem}
+    th,td{padding:.6rem .5rem;font-size:.75rem}
+    .rank-badge{width:26px;height:26px;font-size:.7rem}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+    <div class="title">🎶 Top 100 Guitarists</div>
+    <a href="scorer.html" class="back">← Back to Scorer</a>
+</div>
+
+<div class="table-wrap" id="table-wrap">
+    <div class="loading">Loading guitarists...</div>
+</div>
+
+</div>
+
+<script>
+function rankClass(r) {
+    if (r <= 10) return 'rank-top10';
+    if (r <= 25) return 'rank-top25';
+    return 'rank-rest';
+}
+
+function formatGuitars(guitars) {
+    if (!guitars || guitars.length === 0) return '<span style="color:#6b7080">—</span>';
+    // Show first 2 guitars as "Brand Model"
+    var shown = guitars.slice(0, 2);
+    var parts = [];
+    for (var i = 0; i < shown.length; i++) {
+        parts.push(shown[i][0] + ' ' + shown[i][1]);
+    }
+    return parts.join(', ');
+}
+
+function render(guitarists) {
+    var html = '<table><thead><tr>' +
+        '<th style="width:60px">Rank</th><th>Name</th><th>Top Guitars</th>' +
+        '</tr></thead><tbody>';
+
+    for (var i = 0; i < guitarists.length; i++) {
+        var g = guitarists[i];
+        html += '<tr>' +
+            '<td><span class="rank-badge ' + rankClass(g.rank) + '">' + g.rank + '</span></td>' +
+            '<td class="guitarist-name">' + g.name + '</td>' +
+            '<td class="guitars">' + formatGuitars(g.guitars) + '</td>' +
+            '</tr>';
+    }
+
+    html += '</tbody></table>';
+    document.getElementById('table-wrap').innerHTML = html;
+}
+
+fetch('/api/top-guitarists')
+    .then(function(r) { return r.json(); })
+    .then(render)
+    .catch(function(e) {
+        console.error('Error:', e);
+        document.getElementById('table-wrap').innerHTML = '<div class="loading">Failed to load data.</div>';
+    });
+</script>
+</body>
+</html>

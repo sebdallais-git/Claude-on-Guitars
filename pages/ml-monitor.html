@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Monitor — Vintage Guitar Collector</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e2e4e9;padding:2rem}
+.wrap{max-width:1100px;margin:0 auto}
+
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2.5rem;padding-bottom:1rem;border-bottom:1px solid #1e2028}
+.title{font-size:1.5rem;font-weight:700;color:#fff}
+.back{color:#818cf8;text-decoration:none;font-size:.9rem;font-weight:500;padding:.5rem 1rem;background:#161822;border-radius:6px;cursor:pointer;transition:background .2s,color .2s}
+.back:hover{background:#1e2030;color:#a5b4fc}
+
+/* Section titles */
+.section-title{font-size:1.15rem;font-weight:600;color:#fff;margin-bottom:1rem;margin-top:2.5rem}
+.section-subtitle{font-size:.85rem;color:#6b7080;margin-bottom:1.5rem;margin-top:-.5rem}
+
+/* Status cards */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem}
+.stat-card{background:#161822;border:1px solid #1e2028;border-radius:8px;padding:1.2rem;text-align:center}
+.stat-card .value{font-size:2rem;font-weight:700;color:#818cf8;margin-bottom:.25rem}
+.stat-card .label{font-size:.75rem;color:#6b7080;text-transform:uppercase;letter-spacing:.05em}
+.stat-card.ok .value{color:#4ade80}
+.stat-card.warn .value{color:#facc15}
+.stat-card.off .value{color:#6b7080}
+
+/* Model table */
+.model-table{width:100%;border-collapse:collapse;background:#161822;border:1px solid #1e2028;border-radius:8px;overflow:hidden}
+.model-table th{text-align:left;padding:.75rem 1rem;font-size:.75rem;color:#6b7080;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #1e2028}
+.model-table td{padding:.75rem 1rem;font-size:.85rem;border-bottom:1px solid #1e2028}
+.model-table tr:last-child td{border-bottom:none}
+.badge{display:inline-block;padding:.2rem .5rem;border-radius:4px;font-size:.7rem;font-weight:600}
+.badge-ready{background:rgba(74,222,128,.15);color:#4ade80}
+.badge-waiting{background:rgba(107,114,128,.15);color:#9ca3af}
+
+/* Chart containers */
+.chart-container{background:#161822;border:1px solid #1e2028;border-radius:8px;padding:1.5rem;overflow-x:auto}
+.chart-container svg{display:block;margin:0 auto}
+
+/* Recommendation box */
+.rec-box{background:#161822;border:1px solid #1e2028;border-radius:8px;padding:1.5rem;margin-top:1rem}
+.rec-box .rec-label{font-size:.75rem;color:#6b7080;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem}
+.rec-box .rec-text{font-size:.95rem;color:#e2e4e9;line-height:1.5}
+
+/* Loading */
+.loading{padding:4rem;text-align:center;color:#6b7080}
+
+@media(max-width:768px){
+    .title{font-size:1.2rem}
+    .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+    <div class="title">ML Monitor</div>
+    <a href="../dashboard.html" class="back">&larr; Back to Dashboard</a>
+</div>
+
+<!-- Status Cards -->
+<div class="section-title">System Status</div>
+<div class="section-subtitle">Hybrid ML scoring — blends machine learning with rule-based scoring</div>
+<div class="stats-grid" id="status-cards">
+    <div class="stat-card off"><div class="value" id="models-active">-</div><div class="label">Models Active</div></div>
+    <div class="stat-card"><div class="value" id="training-samples">-</div><div class="label">Training Samples</div></div>
+    <div class="stat-card"><div class="value" id="ml-blend">-</div><div class="label">ML Blend</div></div>
+    <div class="stat-card"><div class="value" id="days-of-data">-</div><div class="label">Days of Data</div></div>
+    <div class="stat-card"><div class="value" id="last-trained">-</div><div class="label">Last Trained</div></div>
+</div>
+
+<!-- Model Table -->
+<div class="section-title">Model Status</div>
+<table class="model-table" id="model-table">
+    <thead>
+        <tr><th>Model</th><th>Status</th><th>Last Trained</th><th>Samples</th><th>Key Metric</th></tr>
+    </thead>
+    <tbody id="model-tbody">
+        <tr><td colspan="5" class="loading">Loading model status...</td></tr>
+    </tbody>
+</table>
+
+<!-- Performance Chart: ML vs Rule MAE% -->
+<div class="section-title">Price Prediction Accuracy</div>
+<div class="section-subtitle">Mean Absolute Error (%) — lower is better. ML (purple) vs Rule-based (grey)</div>
+<div class="chart-container" id="price-chart">
+    <div class="loading">Loading performance data...</div>
+</div>
+
+<!-- Score Drift Chart -->
+<div class="section-title">Score Drift</div>
+<div class="section-subtitle">Mean difference (ML score - Rule score) over time. 0 = identical.</div>
+<div class="chart-container" id="drift-chart">
+    <div class="loading">Loading drift data...</div>
+</div>
+
+<!-- Recommendation -->
+<div class="section-title">Auto-Recommendation</div>
+<div class="rec-box">
+    <div class="rec-label">Latest Analysis</div>
+    <div class="rec-text" id="recommendation">Waiting for data...</div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+const API_BASE = window.location.origin;
+
+async function fetchJSON(url) {
+    try {
+        const resp = await fetch(url);
+        if (!resp.ok) return null;
+        return await resp.json();
+    } catch { return null; }
+}
+
+function formatDate(iso) {
+    if (!iso) return '-';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function metricString(model, metrics) {
+    if (!metrics || Object.keys(metrics).length === 0) return '-';
+    if (model === 'weight_optimizer') return `R2: ${(metrics.r2 || 0).toFixed(2)}`;
+    if (model === 'price_predictor') return `MAE: ${(metrics.mae_pct || 0).toFixed(1)}%`;
+    if (model === 'appreciation_predictor') return `MAE: ${(metrics.mae_pct_points || 0).toFixed(1)}pp`;
+    if (model === 'buy_classifier') return `F1: ${(metrics.f1 || 0).toFixed(2)}`;
+    return '-';
+}
+
+const MODEL_LABELS = {
+    weight_optimizer: 'Weight Optimizer',
+    price_predictor: 'Price Predictor',
+    appreciation_predictor: 'Appreciation Predictor',
+    buy_classifier: 'Buy/Skip Classifier',
+};
+
+async function loadStatus() {
+    const data = await fetchJSON(API_BASE + '/api/ml-status');
+    if (!data) return;
+
+    // Status cards
+    const active = data.models_active || 0;
+    document.getElementById('models-active').textContent = `${active}/4`;
+    document.getElementById('models-active').parentElement.className =
+        'stat-card ' + (active >= 3 ? 'ok' : active > 0 ? 'warn' : 'off');
+
+    document.getElementById('training-samples').textContent =
+        (data.training_samples || 0).toLocaleString();
+
+    const blend = data.ml_blend;
+    document.getElementById('ml-blend').textContent =
+        blend !== undefined ? `${Math.round(blend * 100)}%` : 'off';
+    document.getElementById('ml-blend').parentElement.className =
+        'stat-card ' + (data.ml_enabled ? 'ok' : 'off');
+
+    document.getElementById('days-of-data').textContent = data.days_of_data || 0;
+
+    document.getElementById('last-trained').textContent =
+        formatDate(data.last_trained);
+
+    // Model table
+    const models = data.models || {};
+    const tbody = document.getElementById('model-tbody');
+    tbody.innerHTML = '';
+
+    for (const [name, info] of Object.entries(models)) {
+        const tr = document.createElement('tr');
+        const badge = info.available
+            ? '<span class="badge badge-ready">Ready</span>'
+            : '<span class="badge badge-waiting">Waiting</span>';
+
+        tr.innerHTML = `
+            <td>${MODEL_LABELS[name] || name}</td>
+            <td>${badge}</td>
+            <td>${formatDate(info.trained_at)}</td>
+            <td>${(info.samples || 0).toLocaleString()}</td>
+            <td>${metricString(name, info.metrics)}</td>
+        `;
+        tbody.appendChild(tr);
+    }
+}
+
+function renderBarChart(containerId, logs, getML, getRule, yLabel) {
+    const container = document.getElementById(containerId);
+    if (!logs || logs.length === 0) {
+        container.innerHTML = '<div class="loading">No performance data yet</div>';
+        return;
+    }
+
+    const W = Math.min(900, container.clientWidth - 40);
+    const H = 220;
+    const PAD = { top: 20, right: 20, bottom: 40, left: 50 };
+    const plotW = W - PAD.left - PAD.right;
+    const plotH = H - PAD.top - PAD.bottom;
+
+    // Collect data points
+    const points = logs.map(log => ({
+        date: log.date,
+        ml: getML(log),
+        rule: getRule(log),
+    })).filter(p => p.ml !== null || p.rule !== null);
+
+    if (points.length === 0) {
+        container.innerHTML = '<div class="loading">Insufficient data for chart</div>';
+        return;
+    }
+
+    const allVals = points.flatMap(p => [p.ml, p.rule].filter(v => v !== null));
+    const maxVal = Math.max(...allVals, 1);
+    const barW = Math.max(4, plotW / points.length / 3);
+
+    let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+
+    // Y axis
+    for (let i = 0; i <= 4; i++) {
+        const yVal = (maxVal / 4) * i;
+        const yPos = PAD.top + plotH - (yVal / maxVal) * plotH;
+        svg += `<line x1="${PAD.left}" y1="${yPos}" x2="${W - PAD.right}" y2="${yPos}" stroke="#1e2028" stroke-width="1"/>`;
+        svg += `<text x="${PAD.left - 8}" y="${yPos + 4}" fill="#6b7080" font-size="10" text-anchor="end">${yVal.toFixed(0)}</text>`;
+    }
+
+    // Bars
+    points.forEach((p, i) => {
+        const x = PAD.left + (i / points.length) * plotW + barW * 0.5;
+
+        if (p.ml !== null) {
+            const h = (p.ml / maxVal) * plotH;
+            svg += `<rect x="${x}" y="${PAD.top + plotH - h}" width="${barW}" height="${h}" fill="#818cf8" rx="2"/>`;
+        }
+        if (p.rule !== null) {
+            const h = (p.rule / maxVal) * plotH;
+            svg += `<rect x="${x + barW + 2}" y="${PAD.top + plotH - h}" width="${barW}" height="${h}" fill="#4b5563" rx="2"/>`;
+        }
+
+        // Date label (every few bars)
+        if (i % Math.max(1, Math.floor(points.length / 8)) === 0) {
+            svg += `<text x="${x + barW}" y="${H - 8}" fill="#6b7080" font-size="9" text-anchor="middle">${p.date.slice(5)}</text>`;
+        }
+    });
+
+    // Legend
+    svg += `<rect x="${W - 140}" y="8" width="10" height="10" fill="#818cf8" rx="2"/>`;
+    svg += `<text x="${W - 126}" y="17" fill="#e2e4e9" font-size="10">ML</text>`;
+    svg += `<rect x="${W - 90}" y="8" width="10" height="10" fill="#4b5563" rx="2"/>`;
+    svg += `<text x="${W - 76}" y="17" fill="#e2e4e9" font-size="10">Rule-based</text>`;
+
+    svg += '</svg>';
+    container.innerHTML = svg;
+}
+
+function renderDriftChart(containerId, logs) {
+    const container = document.getElementById(containerId);
+    if (!logs || logs.length === 0) {
+        container.innerHTML = '<div class="loading">No drift data yet</div>';
+        return;
+    }
+
+    const points = logs
+        .filter(l => l.score_drift && l.score_drift.mean_diff !== null)
+        .map(l => ({ date: l.date, val: l.score_drift.mean_diff }));
+
+    if (points.length === 0) {
+        container.innerHTML = '<div class="loading">Insufficient drift data</div>';
+        return;
+    }
+
+    const W = Math.min(900, container.clientWidth - 40);
+    const H = 180;
+    const PAD = { top: 20, right: 20, bottom: 40, left: 50 };
+    const plotW = W - PAD.left - PAD.right;
+    const plotH = H - PAD.top - PAD.bottom;
+
+    const vals = points.map(p => p.val);
+    const absMax = Math.max(Math.abs(Math.min(...vals)), Math.abs(Math.max(...vals)), 5);
+
+    let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+
+    // Zero line
+    const zeroY = PAD.top + plotH / 2;
+    svg += `<line x1="${PAD.left}" y1="${zeroY}" x2="${W - PAD.right}" y2="${zeroY}" stroke="#4b5563" stroke-width="1" stroke-dasharray="4,4"/>`;
+    svg += `<text x="${PAD.left - 8}" y="${zeroY + 4}" fill="#6b7080" font-size="10" text-anchor="end">0</text>`;
+
+    // Path
+    const pathParts = points.map((p, i) => {
+        const x = PAD.left + (i / (points.length - 1 || 1)) * plotW;
+        const y = zeroY - (p.val / absMax) * (plotH / 2);
+        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+    });
+    svg += `<path d="${pathParts.join(' ')}" fill="none" stroke="#818cf8" stroke-width="2"/>`;
+
+    // Dots
+    points.forEach((p, i) => {
+        const x = PAD.left + (i / (points.length - 1 || 1)) * plotW;
+        const y = zeroY - (p.val / absMax) * (plotH / 2);
+        svg += `<circle cx="${x}" cy="${y}" r="3" fill="#818cf8"/>`;
+    });
+
+    // Date labels
+    if (points.length > 0) {
+        svg += `<text x="${PAD.left}" y="${H - 8}" fill="#6b7080" font-size="9" text-anchor="start">${points[0].date.slice(5)}</text>`;
+        if (points.length > 1) {
+            svg += `<text x="${W - PAD.right}" y="${H - 8}" fill="#6b7080" font-size="9" text-anchor="end">${points[points.length - 1].date.slice(5)}</text>`;
+        }
+    }
+
+    svg += '</svg>';
+    container.innerHTML = svg;
+}
+
+async function loadPerformance() {
+    const data = await fetchJSON(API_BASE + '/api/ml-performance');
+    if (!data || !data.daily_logs) return;
+
+    const logs = data.daily_logs;
+
+    // Price accuracy chart
+    renderBarChart('price-chart', logs,
+        l => l.price_prediction ? l.price_prediction.ml_mae_pct : null,
+        l => l.price_prediction ? l.price_prediction.rule_mae_pct : null,
+        'MAE %'
+    );
+
+    // Drift chart
+    renderDriftChart('drift-chart', logs);
+
+    // Recommendation (from latest log)
+    if (logs.length > 0) {
+        const latest = logs[logs.length - 1];
+        if (latest.recommendation) {
+            document.getElementById('recommendation').textContent = latest.recommendation;
+        }
+    }
+}
+
+// Load on page ready
+loadStatus();
+loadPerformance();
+
+// Auto-refresh every 60s
+setInterval(() => { loadStatus(); loadPerformance(); }, 60000);
+</script>
+</body>
+</html>

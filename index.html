@@ -154,6 +154,164 @@
             font-size: 0.78rem;
             color: #3d4048;
         }
+
+        /* ── workflow section ── */
+        .workflow {
+            background: #16181f;
+            border-top: 2px solid #1e2028;
+            padding: 3rem 2rem;
+        }
+
+        .workflow-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .workflow h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .workflow-subtitle {
+            text-align: center;
+            color: #6b7080;
+            font-size: 0.95rem;
+            margin-bottom: 3rem;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .agent-card {
+            background: #1a1c23;
+            border: 1px solid #1e2028;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .agent-icon {
+            font-size: 2.5rem;
+        }
+
+        .agent-info h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+
+        .agent-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .status-running {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+        }
+
+        .status-stopped {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .agent-metrics {
+            display: grid;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #1e2028;
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: #6b7080;
+        }
+
+        .metric-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .workflow-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            padding: 2rem;
+            background: #1a1c23;
+            border-radius: 12px;
+            border: 1px solid #1e2028;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #818cf8;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #6b7080;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        @media (max-width: 768px) {
+            .workflow h2 {
+                font-size: 1.5rem;
+            }
+            .agents-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -173,6 +331,105 @@
     <div class="name-tag">Built by <span>Sebastien DALLAIS</span></div>
 </main>
 
+<section class="workflow">
+    <div class="workflow-container">
+        <h2>⚙️ Agentic Workflow</h2>
+        <p class="workflow-subtitle">Autonomous agents working 24/7 to find your next vintage guitar</p>
+
+        <div class="agents-grid">
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-icon">🔍</div>
+                    <div class="agent-info">
+                        <h3>Watchdog Agent</h3>
+                        <span class="agent-status status-running" id="watchdog-status">
+                            <span class="status-dot"></span>
+                            Running
+                        </span>
+                    </div>
+                </div>
+                <div class="agent-metrics">
+                    <div class="metric-row">
+                        <span class="metric-label">Uptime</span>
+                        <span class="metric-value" id="watchdog-uptime">—</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Last Check</span>
+                        <span class="metric-value" id="watchdog-last">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-icon">🕷️</div>
+                    <div class="agent-info">
+                        <h3>Scraper Agent</h3>
+                        <span class="agent-status status-running" id="scraper-status">
+                            <span class="status-dot"></span>
+                            Active
+                        </span>
+                    </div>
+                </div>
+                <div class="agent-metrics">
+                    <div class="metric-row">
+                        <span class="metric-label">Sites Monitored</span>
+                        <span class="metric-value">2</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Interval</span>
+                        <span class="metric-value">5 min</span>
+                    </div>
+                </div>
+            </div>
+
+            <a href="pages/scorer.html" style="text-decoration: none; color: inherit;">
+            <div class="agent-card" style="cursor: pointer; transition: border-color 0.2s, background 0.2s;" onmouseover="this.style.borderColor='#818cf8';this.style.background='#1e2030'" onmouseout="this.style.borderColor='#1e2028';this.style.background='#1a1c23'">
+                <div class="agent-header">
+                    <div class="agent-icon">📊</div>
+                    <div class="agent-info">
+                        <h3>Scorer Agent</h3>
+                        <span class="agent-status status-running">
+                            <span class="status-dot"></span>
+                            Ready
+                        </span>
+                    </div>
+                </div>
+                <div class="agent-metrics">
+                    <div class="metric-row">
+                        <span class="metric-label">Algorithm</span>
+                        <span class="metric-value">Value + Fit</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Top Picks</span>
+                        <span class="metric-value" id="top-picks">—</span>
+                    </div>
+                </div>
+            </div>
+            </a>
+        </div>
+
+        <div class="workflow-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="total-listings">—</div>
+                <div class="stat-label">Total Listings</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="active-listings">—</div>
+                <div class="stat-label">Active</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="recommendations">—</div>
+                <div class="stat-label">Recommended</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="collection">—</div>
+                <div class="stat-label">In Collection</div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <footer>
     <div class="footer-label">À propos</div>
     <p class="footer-bio">
@@ -183,6 +440,60 @@
         <span>vintage-guitar-collector</span>
     </div>
 </footer>
+
+<script>
+    function formatUptime(seconds) {
+        var hours = Math.floor(seconds / 3600);
+        var minutes = Math.floor((seconds % 3600) / 60);
+        if (hours > 0) return hours + 'h ' + minutes + 'm';
+        if (minutes > 0) return minutes + ' min';
+        return seconds + ' sec';
+    }
+
+    function timeAgo(date) {
+        var seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        if (seconds < 60) return 'just now';
+        var minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return minutes + ' min ago';
+        var hours = Math.floor(minutes / 60);
+        if (hours < 24) return hours + 'h ago';
+        return Math.floor(hours / 24) + 'd ago';
+    }
+
+    function loadWorkflowMetrics() {
+        fetch('/api/stats')
+            .then(function(r) { return r.json(); })
+            .then(function(stats) {
+                document.getElementById('total-listings').textContent = stats.total_listings;
+                document.getElementById('active-listings').textContent = stats.active_listings;
+                document.getElementById('recommendations').textContent = stats.recommendations;
+                document.getElementById('collection').textContent = stats.collection_size;
+                document.getElementById('top-picks').textContent = stats.recommendations;
+            })
+            .catch(function(error) {
+                console.error('Error loading workflow metrics:', error);
+            });
+
+        // Check agent status (simulated - you can enhance this with actual process checks)
+        fetch('/api/agent-status')
+            .then(function(r) { return r.json(); })
+            .then(function(status) {
+                if (status.watchdog) {
+                    document.getElementById('watchdog-uptime').textContent = formatUptime(status.watchdog.uptime || 0);
+                    document.getElementById('watchdog-last').textContent = timeAgo(status.watchdog.last_check);
+                }
+            })
+            .catch(function() {
+                // Default fallback
+                document.getElementById('watchdog-uptime').textContent = 'Active';
+                document.getElementById('watchdog-last').textContent = 'Now';
+            });
+    }
+
+    // Load initially and refresh every 30 seconds
+    loadWorkflowMetrics();
+    setInterval(loadWorkflowMetrics, 30000);
+</script>
 
 </body>
 </html>

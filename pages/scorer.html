@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scorer Agent — Vintage Guitar Collector</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e2e4e9;padding:2rem}
+.wrap{max-width:1100px;margin:0 auto}
+
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2.5rem;padding-bottom:1rem;border-bottom:1px solid #1e2028}
+.title{font-size:1.5rem;font-weight:700;color:#fff}
+.back{color:#818cf8;text-decoration:none;font-size:.9rem;font-weight:500;padding:.5rem 1rem;background:#161822;border-radius:6px;cursor:pointer;transition:background .2s,color .2s}
+.back:hover{background:#1e2030;color:#a5b4fc}
+
+/* Section titles */
+.section-title{font-size:1.15rem;font-weight:600;color:#fff;margin-bottom:1rem;margin-top:2.5rem}
+.section-subtitle{font-size:.85rem;color:#6b7080;margin-bottom:1.5rem;margin-top:-.5rem}
+
+/* Radar chart container */
+.radar-container{display:flex;justify-content:center;align-items:center;background:#161822;border:1px solid #1e2028;border-radius:8px;padding:2rem}
+
+/* Stat cards grid */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem}
+.stat-card{background:#161822;border:1px solid #1e2028;border-radius:8px;padding:1.2rem;text-align:center}
+.stat-card .value{font-size:2rem;font-weight:700;color:#818cf8;margin-bottom:.25rem}
+.stat-card .label{font-size:.75rem;color:#6b7080;text-transform:uppercase;letter-spacing:.05em}
+a.stat-link{text-decoration:none;color:inherit}
+a.stat-link .stat-card{cursor:pointer;transition:background .2s,border-color .2s}
+a.stat-link .stat-card:hover{background:#1e2030;border-color:#818cf8}
+
+/* Features list */
+.features-list{display:flex;flex-direction:column;gap:.75rem}
+.feature-row{background:#161822;border:1px solid #1e2028;border-radius:8px;padding:1rem 1.2rem;display:flex;align-items:center;gap:1rem}
+.feature-rank{font-size:.75rem;font-weight:700;color:#818cf8;background:rgba(129,140,248,.1);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.feature-info{flex:1;min-width:0}
+.feature-name{font-size:.9rem;font-weight:600;color:#fff;margin-bottom:.2rem}
+.feature-desc{font-size:.8rem;color:#6b7080}
+.feature-bar-wrap{width:120px;flex-shrink:0}
+.feature-pct{font-size:.75rem;font-weight:600;color:#e2e4e9;text-align:right;margin-bottom:.25rem}
+.feature-bar{height:6px;border-radius:3px;background:#1e2028}
+.feature-bar-fill{height:100%;border-radius:3px;background:#818cf8}
+
+/* Boosts table */
+.boosts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.boost-card{background:#161822;border:1px solid #1e2028;border-radius:8px;padding:1rem 1.2rem}
+.boost-name{font-size:.9rem;font-weight:600;color:#fff;margin-bottom:.3rem}
+.boost-points{font-size:.8rem;font-weight:600;color:#4ade80;margin-bottom:.2rem}
+.boost-source{font-size:.75rem;color:#6b7080}
+
+/* Sources grid */
+.sources-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
+.source-card{background:#161822;border:1px solid #1e2028;border-radius:8px;padding:1.2rem;display:flex;gap:1rem;align-items:start}
+.source-icon{font-size:1.5rem;flex-shrink:0}
+.source-info{flex:1;min-width:0}
+.source-name{font-size:.9rem;font-weight:600;color:#fff;margin-bottom:.3rem}
+.source-usage{font-size:.8rem;color:#6b7080;line-height:1.4}
+.source-badge{display:inline-block;padding:.15rem .5rem;border-radius:3px;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-left:.5rem;vertical-align:middle}
+.badge-external{background:rgba(34,197,94,.15);color:#4ade80}
+.badge-knowledge{background:rgba(192,132,252,.15);color:#c084fc}
+.badge-learned{background:rgba(250,204,21,.15);color:#facc15}
+.badge-user{background:rgba(96,165,250,.15);color:#60a5fa}
+.badge-config{background:rgba(107,114,128,.15);color:#9ca3af}
+
+/* Condition scale */
+.condition-bar-wrap{background:#161822;border:1px solid #1e2028;border-radius:8px;padding:1.5rem 1.2rem}
+.condition-bar{position:relative;height:28px;border-radius:14px;background:linear-gradient(90deg,#ef4444 0%,#f87171 18%,#facc15 40%,#a3e635 65%,#4ade80 85%,#22c55e 100%);margin-bottom:1.5rem}
+.condition-marks{position:relative;display:flex;justify-content:space-between;padding:0 .5rem}
+.condition-mark{text-align:center}
+.condition-mark .dot{width:8px;height:8px;border-radius:50%;background:#fff;margin:0 auto .4rem}
+.condition-mark .lbl{font-size:.7rem;color:#e2e4e9;font-weight:500;white-space:nowrap}
+.condition-mark .pts{font-size:.65rem;color:#6b7080;margin-top:.15rem}
+
+/* Loading */
+.loading{padding:4rem;text-align:center;color:#6b7080}
+
+@media(max-width:768px){
+    .title{font-size:1.2rem}
+    .stats-grid{grid-template-columns:repeat(2,1fr)}
+    .feature-bar-wrap{width:80px}
+    .sources-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+    <div class="title">📊 Scorer Agent</div>
+    <a href="../dashboard.html" class="back">← Back to Dashboard</a>
+</div>
+
+<!-- Section 1: Radar Chart -->
+<div class="section-title">Scoring Model</div>
+<div class="section-subtitle" id="radar-subtitle">5-dimension weighted scoring — radar chart shows relative weight of each dimension</div>
+<div class="radar-container" id="radar-container">
+    <div class="loading">Loading scorer data...</div>
+</div>
+
+<!-- Section 2: Model Size -->
+<div class="section-title">Model Size</div>
+<div class="section-subtitle">Knowledge base and learned data powering the scorer</div>
+<div class="stats-grid" id="stats-grid">
+    <div class="stat-card"><div class="value" id="stat-dims">—</div><div class="label">Scoring Dimensions</div></div>
+    <a href="iconic-models.html" class="stat-link"><div class="stat-card"><div class="value" id="stat-iconic">—</div><div class="label">Iconic Models</div></div></a>
+    <a href="top-guitarists.html" class="stat-link"><div class="stat-card"><div class="value" id="stat-guitarists">—</div><div class="label">Top Guitarists</div></div></a>
+    <div class="stat-card"><div class="value" id="stat-brands">—</div><div class="label">Brand Tiers</div></div>
+    <div class="stat-card"><div class="value" id="stat-learned">—</div><div class="label">Learned Rates</div></div>
+    <div class="stat-card"><div class="value" id="stat-snapshots">—</div><div class="label">Price Snapshots</div></div>
+    <div class="stat-card"><div class="value" id="stat-models">—</div><div class="label">Models Tracked</div></div>
+</div>
+
+<!-- Section 3: Top Features -->
+<div class="section-title">Top Features</div>
+<div class="section-subtitle">Scoring dimensions ranked by weight</div>
+<div class="features-list" id="features-list"></div>
+
+<!-- Section 4: Score Boosts -->
+<div class="section-title">Score Boosts</div>
+<div class="section-subtitle">Bonus points applied when certain conditions are met</div>
+<div class="boosts-grid" id="boosts-grid"></div>
+
+<!-- Section 5: Information Sources -->
+<div class="section-title">Information Sources</div>
+<div class="section-subtitle">Data feeds powering the scoring engine</div>
+<div class="sources-grid" id="sources-grid"></div>
+
+<!-- Section 6: Condition Scale -->
+<div class="section-title">Condition Scale</div>
+<div class="section-subtitle">How guitar condition maps to the condition score (0-100)</div>
+<div class="condition-bar-wrap" id="condition-wrap"></div>
+
+</div>
+
+<script>
+/* ── Source type icons ── */
+var SOURCE_ICONS = {
+    external: '🌐',
+    knowledge: '📚',
+    learned: '🧠',
+    user: '👤',
+    config: '⚙️'
+};
+
+/* ── Radar chart (SVG) ── */
+function drawRadar(container, weights) {
+    var keys = Object.keys(weights);
+    var n = keys.length;
+    // Friendly labels
+    var labelMap = { value: 'Value', appreciate: 'Appreciation', fit: 'Fit', condition: 'Condition', iconic: 'Iconic' };
+    var labels = keys.map(function(k) { return labelMap[k] || k; });
+    var values = keys.map(function(k) { return weights[k]; });
+
+    // Normalize: scale so that max weight fills the chart area
+    var maxW = Math.max.apply(null, values);
+    var normalized = values.map(function(v) { return v / maxW; });
+
+    var size = 320;
+    var cx = size / 2;
+    var cy = size / 2;
+    var R = 120;
+
+    // Angle for each axis (start at top, go clockwise)
+    function angle(i) { return (Math.PI * 2 * i / n) - Math.PI / 2; }
+    function px(i, r) { return cx + r * Math.cos(angle(i)); }
+    function py(i, r) { return cy + r * Math.sin(angle(i)); }
+
+    // Build polygon points helper
+    function polyPoints(radius) {
+        var pts = [];
+        for (var i = 0; i < n; i++) {
+            pts.push(px(i, radius).toFixed(1) + ',' + py(i, radius).toFixed(1));
+        }
+        return pts.join(' ');
+    }
+
+    var svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">';
+
+    // Concentric guide polygons at 25%, 50%, 75%, 100%
+    var levels = [0.25, 0.5, 0.75, 1.0];
+    for (var li = 0; li < levels.length; li++) {
+        svg += '<polygon points="' + polyPoints(R * levels[li]) + '" fill="none" stroke="#1e2028" stroke-width="1"/>';
+    }
+
+    // Axis lines
+    for (var i = 0; i < n; i++) {
+        svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + px(i, R) + '" y2="' + py(i, R) + '" stroke="#1e2028" stroke-width="1"/>';
+    }
+
+    // Data polygon
+    var dataPts = [];
+    for (var i = 0; i < n; i++) {
+        dataPts.push(px(i, R * normalized[i]).toFixed(1) + ',' + py(i, R * normalized[i]).toFixed(1));
+    }
+    svg += '<polygon points="' + dataPts.join(' ') + '" fill="rgba(129,140,248,0.2)" stroke="#818cf8" stroke-width="2"/>';
+
+    // Data points (dots)
+    for (var i = 0; i < n; i++) {
+        svg += '<circle cx="' + px(i, R * normalized[i]).toFixed(1) + '" cy="' + py(i, R * normalized[i]).toFixed(1) + '" r="4" fill="#818cf8"/>';
+    }
+
+    // Labels with percentage
+    var labelR = R + 30;
+    for (var i = 0; i < n; i++) {
+        var lx = px(i, labelR);
+        var ly = py(i, labelR);
+        var anchor = 'middle';
+        if (Math.cos(angle(i)) > 0.3) anchor = 'start';
+        else if (Math.cos(angle(i)) < -0.3) anchor = 'end';
+        svg += '<text x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + anchor + '" fill="#e2e4e9" font-size="12" font-weight="600" font-family="Inter,sans-serif">' + labels[i] + '</text>';
+        svg += '<text x="' + lx.toFixed(1) + '" y="' + (ly + 14).toFixed(1) + '" text-anchor="' + anchor + '" fill="#6b7080" font-size="11" font-family="Inter,sans-serif">' + Math.round(values[i] * 100) + '%</text>';
+    }
+
+    svg += '</svg>';
+    container.innerHTML = svg;
+}
+
+/* ── Render all sections ── */
+function render(info) {
+    // Radar
+    drawRadar(document.getElementById('radar-container'), info.weights);
+
+    // Subtitle
+    document.getElementById('radar-subtitle').textContent = info.dimensions + '-dimension weighted scoring — radar chart shows relative weight of each dimension';
+
+    // Stats
+    document.getElementById('stat-dims').textContent = info.dimensions;
+    document.getElementById('stat-iconic').textContent = info.knowledge_base.iconic_models;
+    document.getElementById('stat-guitarists').textContent = info.knowledge_base.top_guitarists || 0;
+    var bt = info.knowledge_base.brand_tiers;
+    document.getElementById('stat-brands').textContent = (bt.premium + bt.major);
+    document.getElementById('stat-learned').textContent = info.knowledge_base.learned_rates || 'Collecting...';
+    document.getElementById('stat-snapshots').textContent = info.knowledge_base.price_snapshots;
+    document.getElementById('stat-models').textContent = info.knowledge_base.snapshot_models;
+
+    // Features (sorted by weight descending)
+    var features = info.top_features.slice().sort(function(a, b) { return b.weight - a.weight; });
+    var maxFeatW = features[0].weight;
+    var fhtml = '';
+    for (var i = 0; i < features.length; i++) {
+        var f = features[i];
+        var pct = Math.round(f.weight * 100);
+        var barW = Math.round((f.weight / maxFeatW) * 100);
+        fhtml += '<div class="feature-row">' +
+            '<div class="feature-rank">' + (i + 1) + '</div>' +
+            '<div class="feature-info"><div class="feature-name">' + f.name + '</div><div class="feature-desc">' + f.description + '</div></div>' +
+            '<div class="feature-bar-wrap"><div class="feature-pct">' + pct + '%</div><div class="feature-bar"><div class="feature-bar-fill" style="width:' + barW + '%"></div></div></div>' +
+            '</div>';
+    }
+    document.getElementById('features-list').innerHTML = fhtml;
+
+    // Boosts
+    var bhtml = '';
+    for (var i = 0; i < info.boosts.length; i++) {
+        var b = info.boosts[i];
+        bhtml += '<div class="boost-card">' +
+            '<div class="boost-name">' + b.name + '</div>' +
+            '<div class="boost-points">' + b.points + '</div>' +
+            '<div class="boost-source">Source: ' + b.source + '</div>' +
+            '</div>';
+    }
+    document.getElementById('boosts-grid').innerHTML = bhtml;
+
+    // Sources
+    var shtml = '';
+    for (var i = 0; i < info.information_sources.length; i++) {
+        var s = info.information_sources[i];
+        var icon = SOURCE_ICONS[s.type] || '📄';
+        var badgeClass = 'badge-' + s.type;
+        shtml += '<div class="source-card">' +
+            '<div class="source-icon">' + icon + '</div>' +
+            '<div class="source-info">' +
+            '<div class="source-name">' + s.name + ' <span class="source-badge ' + badgeClass + '">' + s.type + '</span></div>' +
+            '<div class="source-usage">' + s.usage + '</div>' +
+            '</div></div>';
+    }
+    document.getElementById('sources-grid').innerHTML = shtml;
+
+    // Condition scale
+    var conds = info.condition_scale;
+    var chtml = '<div class="condition-bar"></div><div class="condition-marks">';
+    for (var i = 0; i < conds.length; i++) {
+        chtml += '<div class="condition-mark"><div class="dot"></div><div class="lbl">' + conds[i].label + '</div><div class="pts">' + conds[i].score + '</div></div>';
+    }
+    chtml += '</div>';
+    document.getElementById('condition-wrap').innerHTML = chtml;
+}
+
+/* ── Fetch and render ── */
+function load() {
+    fetch('/api/scorer-info')
+        .then(function(r) { return r.json(); })
+        .then(render)
+        .catch(function(e) {
+            console.error('Error loading scorer info:', e);
+            document.getElementById('radar-container').innerHTML = '<div class="loading">Failed to load scorer data.</div>';
+        });
+}
+
+load();
+setInterval(load, 30000);
+</script>
+</body>
+</html>

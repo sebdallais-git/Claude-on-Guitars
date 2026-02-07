@@ -53,3 +53,19 @@ jobs:
           fi
           python3 scripts/learn.py
         continue-on-error: true
+
+      - name: Install ML dependencies
+        run: pip install scikit-learn joblib
+        continue-on-error: true
+
+      - name: Collect Reverb sold data
+        run: python3 scripts/reverb_sold.py
+        continue-on-error: true
+
+      - name: Train ML models
+        run: python3 scripts/ml_train.py
+        continue-on-error: true
+
+      - name: Run ML monitor
+        run: python3 scripts/ml_monitor.py
+        continue-on-error: true

@@ -7,9 +7,10 @@ Scoring dimensions (weights tunable in data/budget.json):
   2. Appreciation        — projected annual rate, with golden era boost
   3. Collection fit      — diversification bonus, duplicate penalty, iconic model boost
   4. Condition           — guitar condition mapped to 0-100
+  5. Iconic status       — how many top-100 guitarists played this model (rank-weighted)
 
-Backward-compatible: if 'condition' weight is missing from budget.json,
-falls back to the old 3-dimension formula.
+Backward-compatible: dimensions only activate if their weight key exists
+in budget.json (e.g. 'condition', 'iconic').
 
 Run standalone:
     python3 scorer.py
@@ -27,6 +28,12 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
 from valuation import appreciation_rate, project_value, read_collection, _parse_year
+
+# ML inference — optional, graceful fallback when not installed or no models
+try:
+    import ml_predict as _ml_predict
+except ImportError:
+    _ml_predict = None
 
 # ── paths ─────────────────────────────────────────────────────────
 _SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
@@ -150,6 +157,96 @@ def _match_iconic_model(brand, model):
                 best_len = match_len
 
     return best
+
+
+# ── top guitarists knowledge base (iconic scoring) ───────────────
+_guitarists_cache = None
+_iconic_score_cache = None
+
+
+def _load_top_guitarists():
+    """Load top guitarists from data/knowledge/top_guitarists.json."""
+    global _guitarists_cache
+    if _guitarists_cache is not None:
+        return _guitarists_cache
+    _guitarists_cache = []
+    path = os.path.join(_KNOWLEDGE, "top_guitarists.json")
+    if os.path.exists(path):
+        try:
+            with open(path) as f:
+                data = json.load(f)
+            _guitarists_cache = data.get("guitarists", [])
+        except (json.JSONDecodeError, KeyError):
+            pass
+    return _guitarists_cache
+
+
+def _build_iconic_scores():
+    """Build rank-weighted association counts per model, return (lookup, max_score).
+
+    Each guitarist contributes (101 - rank) / 100 points, so #1 = 1.0, #100 = 0.01.
+    Lookup key: "brand_lower|model_lower".
+    """
+    global _iconic_score_cache
+    if _iconic_score_cache is not None:
+        return _iconic_score_cache
+
+    guitarists = _load_top_guitarists()
+    model_scores = {}  # "brand|model" → weighted count
+
+    for g in guitarists:
+        weight = (101 - g["rank"]) / 100.0
+        for brand, model in g.get("guitars", []):
+            key = f"{brand.lower()}|{model.lower()}"
+            model_scores[key] = model_scores.get(key, 0.0) + weight
+
+    max_score = max(model_scores.values()) if model_scores else 1.0
+    _iconic_score_cache = (model_scores, max_score)
+    return _iconic_score_cache
+
+
+def _score_iconic(brand, model):
+    """0-100: how many top-100 guitarists are associated with this model.
+
+    Weighted by rank — higher-ranked guitarists contribute more.
+    Score = (weighted_count / max_weighted_count) * 100, capped at 100.
+    Uses the same substring matching logic as _match_iconic_model().
+    """
+    guitarists = _load_top_guitarists()
+    if not guitarists:
+        return 50.0  # neutral when no data
+
+    model_scores, max_score = _build_iconic_scores()
+    brand_l = brand.lower()
+    model_l = model.lower()
+
+    # Try exact key match first, then substring matching
+    key = f"{brand_l}|{model_l}"
+    if key in model_scores:
+        return min(100.0, model_scores[key] / max_score * 100)
+
+    # Substring matching: same logic as _match_iconic_model
+    best_score = 0.0
+    best_len = 0
+    for mkey, wscore in model_scores.items():
+        k_brand, k_model = mkey.split("|", 1)
+
+        # Brand must share a word
+        brand_words = set(re.split(r"[^a-z]+", brand_l)) - {""}
+        key_words = set(re.split(r"[^a-z]+", k_brand)) - {""}
+        if not (brand_words & key_words):
+            continue
+
+        # Model substring match (either direction), longest wins
+        if k_model in model_l or model_l in k_model:
+            match_len = len(k_model)
+            if match_len > best_len:
+                best_score = wscore
+                best_len = match_len
+
+    if best_len > 0:
+        return min(100.0, best_score / max_score * 100)
+    return 0.0
 
 
 # ── read active listings ──────────────────────────────────────────
@@ -286,49 +383,61 @@ def _score_fit(entry, collection):
 def score_listing(entry, collection, budget):
     """
     Composite 0–100 score + per-dimension breakdown.
-    Supports 3-dim (backward-compatible) or 4-dim scoring based on
-    whether 'condition' weight exists in budget.json.
-    Returns (total, {"value": …, "appreciation": …, "fit": …, "condition": …}).
+    Supports 3/4/5-dim scoring based on which weight keys exist in budget.json.
+    When ml_enabled is True in budget, blends ML scores using ml_blend factor.
+    Returns (total, breakdown_dict).
     """
     w = budget["weights"]
     s_val  = _score_value(entry["price"], entry.get("reverb_lo"), entry.get("reverb_hi"))
     s_app  = _score_appreciation(entry["brand"], entry["year"], model=entry.get("model"))
     s_fit  = _score_fit(entry, collection)
     s_cond = _score_condition(entry.get("condition", ""))
+    s_icon = _score_iconic(entry["brand"], entry.get("model", ""))
 
+    # Build rule-based total from whichever dimensions have weights
+    rule_total = w["value"] * s_val + w["appreciate"] * s_app + w["fit"] * s_fit
     if "condition" in w:
-        # 4-dimension scoring
-        total = (
-            w["value"]      * s_val +
-            w["appreciate"] * s_app +
-            w["fit"]        * s_fit +
-            w["condition"]  * s_cond
-        )
-    else:
-        # Backward-compatible 3-dimension scoring
-        total = (
-            w["value"]      * s_val +
-            w["appreciate"] * s_app +
-            w["fit"]        * s_fit
-        )
+        rule_total += w["condition"] * s_cond
+    if "iconic" in w:
+        rule_total += w["iconic"] * s_icon
 
-    return round(total, 1), {
+    breakdown = {
         "value":        round(s_val, 1),
         "appreciation": round(s_app, 1),
         "fit":          round(s_fit, 1),
         "condition":    round(s_cond, 1),
+        "iconic":       round(s_icon, 1),
+        "ml_total":     None,
+        "ml_buy_prob":  None,
+        "ml_price":     None,
+        "rule_total":   round(rule_total, 1),
     }
+
+    # Hybrid ML blending (when enabled and models available)
+    total = rule_total
+    if budget.get("ml_enabled") and _ml_predict and _ml_predict.is_ml_available():
+        ml_blend = budget.get("ml_blend", 0.3)
+        ml_result = _ml_predict.ml_score_listing(entry, collection, budget, breakdown)
+        if ml_result:
+            if ml_result.get("ml_total") is not None:
+                total = (1 - ml_blend) * rule_total + ml_blend * ml_result["ml_total"]
+            breakdown["ml_total"] = ml_result.get("ml_total")
+            breakdown["ml_buy_prob"] = ml_result.get("ml_buy_prob")
+            breakdown["ml_price"] = ml_result.get("ml_price")
+
+    return round(total, 1), breakdown
 
 
 # ── write recommendations sheet ───────────────────────────────────
 REC_HEADERS = [
     "Rank", "Brand", "Model", "Type", "Year", "Price ($)",
     "Reverb Low $", "Reverb High $", "Condition", "Cond.",
-    "Score", "Value", "Apprec.", "Fit",
+    "Score", "Value", "Apprec.", "Fit", "Iconic",
     "Value in 1 Year ($)", "Value in 2 Years ($)",
     "URL",
+    "ML Score", "Buy Prob", "ML Price",
 ]
-REC_WIDTHS = [6, 22, 26, 18, 10, 14, 14, 14, 14, 8, 8, 8, 10, 6, 20, 22, 65]
+REC_WIDTHS = [6, 22, 26, 18, 10, 14, 14, 14, 14, 8, 8, 8, 10, 6, 8, 20, 22, 65, 10, 10, 14]
 
 HEADER_FILL  = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
 HEADER_FONT  = Font(bold=True, color="FFFFFF", size=11)
@@ -396,6 +505,7 @@ def write_recommendations(scored, budget):
         ws.cell(row=row, column=12, value=breakdown["value"])
         ws.cell(row=row, column=13, value=breakdown["appreciation"])
         ws.cell(row=row, column=14, value=breakdown["fit"])
+        ws.cell(row=row, column=15, value=breakdown["iconic"])
 
         # projected values (Reverb midpoint, or listing price as fallback)
         if entry.get("reverb_lo") and entry.get("reverb_hi"):
@@ -407,21 +517,30 @@ def write_recommendations(scored, budget):
         v2y = project_value(base, entry["brand"], entry["year"], 2,
                             model=entry.get("model"))
         if v1y:
-            ws.cell(row=row, column=15, value=v1y)
-            ws.cell(row=row, column=15).number_format = CURRENCY_FMT
-        if v2y:
-            ws.cell(row=row, column=16, value=v2y)
+            ws.cell(row=row, column=16, value=v1y)
             ws.cell(row=row, column=16).number_format = CURRENCY_FMT
+        if v2y:
+            ws.cell(row=row, column=17, value=v2y)
+            ws.cell(row=row, column=17).number_format = CURRENCY_FMT
 
         # URL
-        url_cell           = ws.cell(row=row, column=17, value=entry["url"])
+        url_cell           = ws.cell(row=row, column=18, value=entry["url"])
         url_cell.hyperlink = entry["url"]
         url_cell.font      = URL_FONT
+
+        # ML columns (19-21) — only populated when ML is active
+        if breakdown.get("ml_total") is not None:
+            ws.cell(row=row, column=19, value=breakdown["ml_total"])
+        if breakdown.get("ml_buy_prob") is not None:
+            ws.cell(row=row, column=20, value=breakdown["ml_buy_prob"])
+        if breakdown.get("ml_price") is not None:
+            ws.cell(row=row, column=21, value=breakdown["ml_price"])
+            ws.cell(row=row, column=21).number_format = CURRENCY_FMT
 
         # grey out the whole row when over remaining budget
         if over:
             grey = Font(color="808080", size=10)
-            for col in range(1, 17):
+            for col in range(1, 22):
                 ws.cell(row=row, column=col).font = grey
             url_cell.font = Font(color="808080", size=10, underline="single")
 
@@ -441,13 +560,24 @@ def run():
 
     budget_remaining = budget["total"] - budget["spent"]
     w = budget["weights"]
-    dims = "4-dim" if "condition" in w else "3-dim"
+    dims = f"{len(w)}-dim"
     print(f"  Budget:          ${budget['total']:>10,.0f} total | "
           f"${budget['spent']:>10,.0f} spent | "
           f"${budget_remaining:>10,.0f} remaining")
     print(f"  Collection:      {len(collection)} guitars")
     print(f"  Active listings: {len(listings)}")
     print(f"  Scoring model:   {dims} (weights: {json.dumps(w)})")
+
+    # ML status line
+    if budget.get("ml_enabled") and _ml_predict and _ml_predict.is_ml_available():
+        blend = budget.get("ml_blend", 0.3)
+        n_models = _ml_predict.active_model_count()
+        print(f"  ML scoring:      {dims} hybrid (blend: {blend}, models: {n_models}/4)")
+    elif budget.get("ml_enabled"):
+        print(f"  ML scoring:      enabled but no models trained yet")
+    else:
+        print(f"  ML scoring:      disabled")
+
     print(f"  Scoring …\n")
 
     scored = []
@@ -460,13 +590,14 @@ def run():
 
     # ── terminal summary ──
     print(f"  {'#':<4} {'Brand':<22} {'Model':<24} {'Year':>6} "
-          f"{'Price':>10} {'Score':>6} {'Cond':>5}  Budget")
-    print(f"  {'─'*95}")
+          f"{'Price':>10} {'Score':>6} {'Cond':>5} {'Icon':>5}  Budget")
+    print(f"  {'─'*101}")
     for rank, (entry, total, bd) in enumerate(top, 1):
         price_str  = f"${entry['price']:>9,.0f}" if entry["price"] else "          N/A"
         budget_tag = "OVER" if (entry["price"] or 0) > budget_remaining else "ok"
         print(f"  {rank:<4} {entry['brand']:<22} {entry['model']:<24} "
-              f"{entry['year']:>6} {price_str} {total:>6.1f} {bd['condition']:>5.0f}  {budget_tag}")
+              f"{entry['year']:>6} {price_str} {total:>6.1f} {bd['condition']:>5.0f} "
+              f"{bd['iconic']:>5.0f}  {budget_tag}")
     print()
 
     write_recommendations(top, budget)

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iconic Guitar Models — Vintage Guitar Collector</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e2e4e9;padding:2rem}
+.wrap{max-width:1200px;margin:0 auto}
+
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2.5rem;padding-bottom:1rem;border-bottom:1px solid #1e2028}
+.title{font-size:1.5rem;font-weight:700;color:#fff}
+.back{color:#818cf8;text-decoration:none;font-size:.9rem;font-weight:500;padding:.5rem 1rem;background:#161822;border-radius:6px;cursor:pointer;transition:background .2s,color .2s}
+.back:hover{background:#1e2030;color:#a5b4fc}
+
+.stats-row{display:flex;gap:1rem;margin-bottom:2rem}
+.mini-stat{background:#161822;border:1px solid #1e2028;border-radius:8px;padding:1rem 1.5rem;text-align:center}
+.mini-stat .value{font-size:1.5rem;font-weight:700;color:#818cf8}
+.mini-stat .label{font-size:.7rem;color:#6b7080;text-transform:uppercase;letter-spacing:.05em;margin-top:.2rem}
+
+.table-wrap{background:#161822;border:1px solid #1e2028;border-radius:8px;overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{background:#1a1c23;padding:.85rem 1rem;text-align:left;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#8b8fa3;border-bottom:1px solid #1e2028;white-space:nowrap}
+td{padding:.85rem 1rem;border-bottom:1px solid #1e2028;font-size:.85rem}
+tr:last-child td{border-bottom:none}
+tr:hover{background:#1a1c23}
+
+.boost-badge{display:inline-block;padding:.2rem .6rem;border-radius:4px;font-weight:600;font-size:.8rem}
+.boost-high{background:rgba(34,197,94,.15);color:#4ade80}
+.boost-med{background:rgba(250,204,21,.15);color:#facc15}
+.boost-low{background:rgba(129,140,248,.15);color:#818cf8}
+
+.era{color:#c084fc;font-weight:500}
+.artists{color:#6b7080;font-size:.8rem}
+.value-range{white-space:nowrap}
+
+.loading{padding:4rem;text-align:center;color:#6b7080}
+
+@media(max-width:768px){
+    .title{font-size:1.2rem}
+    .stats-row{flex-wrap:wrap}
+    th,td{padding:.6rem .5rem;font-size:.75rem}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+    <div class="title">🎸 Iconic Guitar Models</div>
+    <a href="scorer.html" class="back">← Back to Scorer</a>
+</div>
+
+<div class="stats-row">
+    <div class="mini-stat"><div class="value" id="model-count">—</div><div class="label">Models</div></div>
+    <div class="mini-stat"><div class="value" id="brand-count">—</div><div class="label">Brands</div></div>
+</div>
+
+<div class="table-wrap" id="table-wrap">
+    <div class="loading">Loading iconic models...</div>
+</div>
+
+</div>
+
+<script>
+function formatCurrency(val) {
+    if (val == null) return null;
+    return '$' + Math.round(val).toLocaleString();
+}
+
+function boostClass(b) {
+    if (b >= 18) return 'boost-high';
+    if (b >= 14) return 'boost-med';
+    return 'boost-low';
+}
+
+function render(models) {
+    // Summary stats
+    document.getElementById('model-count').textContent = models.length;
+    var brands = {};
+    for (var i = 0; i < models.length; i++) brands[models[i].brand] = true;
+    document.getElementById('brand-count').textContent = Object.keys(brands).length;
+
+    // Table
+    var html = '<table><thead><tr>' +
+        '<th>Brand</th><th>Model</th><th>Golden Era</th><th>Boost</th>' +
+        '<th>Value Range</th><th>Top Artists</th>' +
+        '</tr></thead><tbody>';
+
+    for (var i = 0; i < models.length; i++) {
+        var m = models[i];
+        var era = m.golden_era.length === 2 ? m.golden_era[0] + ' – ' + m.golden_era[1] : '—';
+        var range = (m.value_lo != null && m.value_hi != null)
+            ? formatCurrency(m.value_lo) + ' – ' + formatCurrency(m.value_hi)
+            : '<span style="color:#6b7080">N/A</span>';
+        var artists = m.artists.length > 0 ? m.artists.join(', ') : '—';
+
+        html += '<tr>' +
+            '<td>' + m.brand + '</td>' +
+            '<td style="font-weight:600;color:#fff">' + m.model + '</td>' +
+            '<td class="era">' + era + '</td>' +
+            '<td><span class="boost-badge ' + boostClass(m.boost) + '">' + m.boost + '</span></td>' +
+            '<td class="value-range">' + range + '</td>' +
+            '<td class="artists">' + artists + '</td>' +
+            '</tr>';
+    }
+
+    html += '</tbody></table>';
+    document.getElementById('table-wrap').innerHTML = html;
+}
+
+fetch('/api/iconic-models')
+    .then(function(r) { return r.json(); })
+    .then(render)
+    .catch(function(e) {
+        console.error('Error:', e);
+        document.getElementById('table-wrap').innerHTML = '<div class="loading">Failed to load data.</div>';
+    });
+</script>
+</body>
+</html>

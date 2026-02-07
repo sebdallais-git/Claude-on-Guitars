@@ -1,383 +1,577 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vintage Guitar Collector — Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-/* [CSS remains the same as original dashboard] */
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#0f1117;--card:#161822;--border:#1e2028;--card2:#1a1c24;
-  --text:#e2e4e9;--muted:#6b7080;--dim:#4a4e5a;
-  --indigo:#818cf8;--purple:#c084fc;
-  --green:#4ade80;--amber:#fbbf24;--red:#f87171;
-  --blue:#60a5fa;--orange:#fb923c;--pink:#f472b6;--teal:#34d399;
-}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
-header{display:flex;justify-content:space-between;align-items:center;padding:1.2rem 2rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:100}
-.logo{font-size:.95rem;font-weight:600;color:#fff}
-.logo .g{background:linear-gradient(135deg,var(--indigo),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.gh{color:var(--muted);text-decoration:none;font-size:.78rem;font-weight:500;display:flex;align-items:center;gap:.35rem}
-.gh:hover{color:#fff}
-.gh svg{width:15px;height:15px;fill:currentColor}
-.wrap{max-width:1140px;margin:0 auto;padding:2rem 1.5rem 3rem}
-.sec{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);margin-bottom:.9rem;display:flex;align-items:center;gap:.7rem}
-.sec::after{content:'';flex:1;height:1px;background:var(--border)}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:.9rem;margin-bottom:2.4rem}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.1rem 1rem}
-.kpi-l{font-size:.67rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem}
-.kpi-v{font-size:1.55rem;font-weight:700;color:#fff;letter-spacing:-.02em}
-.kpi-s{font-size:.68rem;color:var(--dim);margin-top:.25rem}
-.kpi.ci .kpi-v{color:var(--indigo)}.kpi.cg .kpi-v{color:var(--green)}.kpi.ca .kpi-v{color:var(--amber)}.kpi.cr .kpi-v{color:var(--red)}.kpi.cb .kpi-v{color:var(--blue)}.kpi.cp .kpi-v{color:var(--purple)}
-.bp-bg{background:var(--border);border-radius:3px;height:5px;margin-top:.55rem;overflow:hidden}
-.bp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--indigo),var(--purple))}
-.cg{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2.4rem}
-@media(max-width:680px){.cg{grid-template-columns:1fr}}
-.cc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.3rem}
-.cc:hover{border-color:var(--indigo);cursor:pointer}
-.ct{font-size:.76rem;font-weight:600;color:var(--text);margin-bottom:.15rem}
-.cs{font-size:.65rem;color:var(--dim);margin-bottom:.85rem}
-.bb{display:flex;align-items:center;gap:.5rem;margin-bottom:.48rem;cursor:pointer;padding:.3rem;border-radius:4px;transition:background .2s}
-.bb:hover{background:rgba(129,140,248,.05)}
-.bb-l{font-size:.7rem;color:var(--muted);width:88px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
-.bb-t{flex:1;height:17px;background:var(--border);border-radius:3px;overflow:hidden}
-.bb-f{height:100%;border-radius:3px;display:flex;align-items:center;padding-left:6px;font-size:.66rem;font-weight:600;color:rgba(255,255,255,.9)}
-.bb-n{font-size:.66rem;color:var(--dim);width:20px;text-align:right;flex-shrink:0}
-.dn-w{display:flex;align-items:center;gap:1.4rem}
-.dn-leg{display:flex;flex-direction:column;gap:.5rem}
-.lg{display:flex;align-items:center;gap:.45rem;font-size:.73rem;color:var(--muted)}
-.lg-d{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.lg-n{color:var(--text);font-weight:600;margin-left:auto;font-size:.72rem}
-.vb-w{display:flex;align-items:flex-end;gap:5px;height:145px}
-.vb-c{display:flex;flex-direction:column;align-items:center;flex:1;height:100%;justify-content:flex-end}
-.vb-r{width:100%;border-radius:3px 3px 0 0;min-height:2px}
-.vb-l{font-size:.58rem;color:var(--muted);margin-top:4px;text-align:center;white-space:nowrap}
-.vb-n{font-size:.62rem;color:var(--muted);margin-bottom:2px;font-weight:500}
-.rc{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:2rem}
-.rc-s{overflow-x:auto}
-.rc-s::-webkit-scrollbar{height:3px}
-.rc-s::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-table.rt{width:100%;border-collapse:collapse}
-table.rt th{font-size:.64rem;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;padding:.8rem .9rem;text-align:left;border-bottom:1px solid var(--border);background:#141620;white-space:nowrap}
-table.rt td{font-size:.76rem;color:#c8cad0;padding:.68rem .9rem;border-bottom:1px solid #1a1c24;white-space:nowrap}
-table.rt tr:last-child td{border-bottom:none}
-table.rt tbody tr:hover td{background:rgba(129,140,248,.04);cursor:pointer}
-.sb{display:inline-flex;align-items:center;justify-content:center;width:40px;height:23px;border-radius:5px;font-size:.71rem;font-weight:700}
-.sg{background:rgba(74,222,128,.14);color:var(--green)}.sy{background:rgba(251,191,36,.14);color:var(--amber)}.sr{background:rgba(248,113,113,.14);color:var(--red)}
-.rk{color:var(--indigo);font-weight:700}
-.pv{color:var(--text);font-weight:600}
-.pn{color:var(--dim);font-style:italic}
-.ds{width:22px;height:5px;background:var(--border);border-radius:2px;overflow:hidden;display:inline-block}
-.df{height:100%;border-radius:2px}
-footer{border-top:1px solid var(--border);padding:1.2rem 2rem;display:flex;justify-content:space-between;font-size:.7rem;color:var(--dim)}
-.view-more{display:inline-block;margin-top:1rem;color:var(--indigo);text-decoration:none;font-size:.8rem;font-weight:500}
-.view-more:hover{text-decoration:underline}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vintage Guitar Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f1117;
+            color: #e2e4e9;
+            padding: 1rem;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header {
+            padding: 1.5rem 0;
+            border-bottom: 1px solid #1e2028;
+            margin-bottom: 2rem;
+        }
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle { color: #6b7080; font-size: 0.9rem; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #16181f;
+            border: 1px solid #1e2028;
+            border-radius: 8px;
+            padding: 1.25rem;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: #6b7080;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .stat-value.currency::before {
+            content: '$';
+            font-size: 1.2rem;
+            color: #818cf8;
+        }
+        /* Editable budget card */
+        .budget-card { cursor: pointer; transition: background 0.2s, border-color 0.2s; position: relative; }
+        .budget-card:hover { background: #1a1c23; border-color: #818cf8; }
+        .budget-card .edit-icon { position: absolute; top: 0.75rem; right: 0.75rem; font-size: 0.8rem; color: #6b7080; }
+        .budget-card:hover .edit-icon { color: #818cf8; }
+        .budget-edit { display: none; }
+        .budget-card.editing .budget-display { display: none; }
+        .budget-card.editing .budget-edit { display: block; }
+        .budget-card.editing { cursor: default; }
+        .budget-card.editing:hover { background: #16181f; border-color: #1e2028; }
+        .budget-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+        .budget-row label { font-size: 0.75rem; color: #6b7080; width: 50px; text-transform: uppercase; }
+        .budget-btn { background: #1e2028; border: 1px solid #2a2d38; color: #e2e4e9; width: 28px; height: 28px; border-radius: 4px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+        .budget-btn:hover { background: #2a2d38; border-color: #818cf8; }
+        .budget-amount { font-size: 1rem; font-weight: 600; color: #fff; min-width: 80px; text-align: center; }
+        .budget-actions { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
+        .budget-actions button { padding: 0.35rem 0.75rem; border-radius: 4px; border: none; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+        .btn-save { background: #818cf8; color: #fff; }
+        .btn-save:hover { background: #6366f1; }
+        .btn-cancel { background: #1e2028; color: #6b7080; }
+        .btn-cancel:hover { background: #2a2d38; color: #e2e4e9; }
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #1e2028;
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            color: #6b7080;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .tab:hover {
+            color: #e2e4e9;
+        }
+        .tab.active {
+            color: #818cf8;
+            border-bottom-color: #818cf8;
+        }
+        .table-container {
+            background: #16181f;
+            border: 1px solid #1e2028;
+            border-radius: 8px;
+            overflow-x: auto;
+            display: none;
+        }
+        .table-container.active { display: block; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: #1a1c23;
+            padding: 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #8b8fa3;
+            border-bottom: 1px solid #1e2028;
+            white-space: nowrap;
+        }
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #1e2028;
+            font-size: 0.85rem;
+            color: #e2e4e9;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #1a1c23; }
+        .score-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .score-high {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+        }
+        .score-medium {
+            background: rgba(250, 204, 21, 0.15);
+            color: #facc15;
+        }
+        .score-low {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+        .link { color: #818cf8; text-decoration: none; cursor: pointer; }
+        .link:hover { text-decoration: underline; color: #a5b4fc; }
+        .empty-state {
+            padding: 4rem 2rem;
+            text-align: center;
+            color: #6b7080;
+        }
+        .loading {
+            padding: 4rem 2rem;
+            text-align: center;
+            color: #6b7080;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 1.5rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .stat-value { font-size: 1.5rem; }
+            th, td {
+                padding: 0.75rem 0.5rem;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <header>
+            <h1>🎸 Vintage Guitar Dashboard</h1>
+            <p class="subtitle">Real-time view of listings, recommendations & collection</p>
+        </header>
 
-<header>
-  <div class="logo">Vintage Guitar <span class="g">Collector</span></div>
-  <a href="https://github.com/sebdallais-git" target="_blank" class="gh">
-    <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-    sebdallais-git
-  </a>
-</header>
+        <div class="stats-grid" id="stats">
+            <div class="stat-card">
+                <div class="stat-label">Active Listings</div>
+                <div class="stat-value" id="active-listings">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Top Recommendations</div>
+                <div class="stat-value" id="recommendations">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Collection Size</div>
+                <div class="stat-value" id="collection-size">—</div>
+            </div>
+            <div class="stat-card budget-card" id="budget-card" onclick="toggleBudgetEdit(event)">
+                <span class="edit-icon">&#9998;</span>
+                <div class="budget-display">
+                    <div class="stat-label">Budget Remaining</div>
+                    <div class="stat-value currency" id="budget-remaining">—</div>
+                </div>
+                <div class="budget-edit">
+                    <div class="stat-label" style="margin-bottom: 0.75rem;">Edit Budget</div>
+                    <div class="budget-row">
+                        <label>Total</label>
+                        <button class="budget-btn" onclick="adjustBudget('total', -500, event)">-</button>
+                        <div class="budget-amount" id="edit-total">$20,000</div>
+                        <button class="budget-btn" onclick="adjustBudget('total', 500, event)">+</button>
+                    </div>
+                    <div class="budget-row">
+                        <label>Spent</label>
+                        <button class="budget-btn" onclick="adjustBudget('spent', -100, event)">-</button>
+                        <div class="budget-amount" id="edit-spent">$0</div>
+                        <button class="budget-btn" onclick="adjustBudget('spent', 100, event)">+</button>
+                    </div>
+                    <div class="budget-actions">
+                        <button class="btn-save" onclick="saveBudget(event)">Save</button>
+                        <button class="btn-cancel" onclick="cancelBudgetEdit(event)">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<div class="wrap">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('recommendations', this)">Top Recommendations</button>
+            <button class="tab" onclick="switchTab('listings', this)">All Listings</button>
+            <button class="tab" onclick="switchTab('collection', this)">My Collection</button>
+        </div>
 
-<!-- ── workflow ── -->
-<div class="sec">Agentic Workflow</div>
-<div style="margin-bottom:2.4rem">
-<svg viewBox="0 0 760 272" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto" markerUnits="strokeWidth">
-      <polygon points="0,0 9,3.5 0,7" fill="#4a4e5a"/>
-    </marker>
-    <linearGradient id="ag" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#c084fc"/>
-    </linearGradient>
-  </defs>
+        <div id="recommendations-table" class="table-container active">
+            <div class="loading">Loading recommendations...</div>
+        </div>
 
-  <!-- ── ROW 1 ── -->
-  <!-- Multi-site sources -->
-  <rect x="4" y="10" width="116" height="64" rx="8" fill="#161822" stroke="#2a3a5c" stroke-width="1"/>
-  <text x="62" y="33" text-anchor="middle" fill="#60a5fa" font-size="9.5" font-weight="600" font-family="Inter,sans-serif">retrofret.com</text>
-  <text x="62" y="47" text-anchor="middle" fill="#4ade80" font-size="9.5" font-weight="600" font-family="Inter,sans-serif">woodstore.fr</text>
-  <text x="62" y="61" text-anchor="middle" fill="#4a4e5a" font-size="8" font-family="Inter,sans-serif">sources</text>
+        <div id="listings-table" class="table-container">
+            <div class="loading">Loading listings...</div>
+        </div>
 
-  <!-- arrow -->
-  <line x1="121" y1="42" x2="152" y2="42" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
+        <div id="collection-table" class="table-container">
+            <div class="loading">Loading collection...</div>
+        </div>
 
-  <!-- Scraper -->
-  <rect x="155" y="10" width="106" height="64" rx="8" fill="#161822" stroke="#282c3a" stroke-width="1"/>
-  <rect x="155" y="10" width="106" height="3" rx="2" fill="url(#ag)"/>
-  <text x="208" y="40" text-anchor="middle" fill="#e2e4e9" font-size="11" font-weight="600" font-family="Inter,sans-serif">Scraper</text>
-  <text x="208" y="56" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">every 5 min</text>
+        <!-- Workflow Diagram -->
+        <div style="margin-top: 4rem; padding: 3rem 2rem; background: #16181f; border-top: 2px solid #1e2028;">
+            <h2 style="text-align: center; color: #fff; margin-bottom: 0.75rem; font-size: 1.8rem;">🔄 Agentic Workflow Pipeline</h2>
+            <p style="text-align: center; color: #6b7080; margin-bottom: 3rem;">Real-time view of autonomous agents processing vintage guitar data</p>
 
-  <!-- arrow -->
-  <line x1="262" y1="42" x2="291" y2="42" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
+            <div class="flow-layer" style="margin-bottom: 3rem;">
+                <div style="font-size: 0.75rem; color: #6b7080; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">1. Input Sources</div>
+                <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                    <div style="background: #1a1c23; border: 2px solid #818cf8; border-radius: 12px; padding: 1.5rem; min-width: 180px;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🌐</div>
+                        <div style="font-weight: 600; color: #fff; margin-bottom: 0.25rem;">Retrofret.com</div>
+                        <div style="font-size: 0.8rem; color: #6b7080;">Vintage guitars</div>
+                    </div>
+                    <div style="background: #1a1c23; border: 2px solid #818cf8; border-radius: 12px; padding: 1.5rem; min-width: 180px;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🌐</div>
+                        <div style="font-weight: 600; color: #fff; margin-bottom: 0.25rem;">Woodstore.fr</div>
+                        <div style="font-size: 0.8rem; color: #6b7080;">Paris dealer</div>
+                    </div>
+                </div>
+            </div>
 
-  <!-- listings.xlsx -->
-  <rect x="294" y="10" width="118" height="64" rx="8" fill="#1a1c24" stroke="#2a2d3a" stroke-width="1"/>
-  <text x="353" y="38" text-anchor="middle" fill="#e2e4e9" font-size="10.5" font-weight="600" font-family="Inter,sans-serif">listings.xlsx</text>
-  <text x="353" y="55" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">419 guitars</text>
+            <div style="text-align: center; margin: 2rem 0; color: #6b7080; font-size: 2rem;">↓</div>
 
-  <!-- arrow right -->
-  <line x1="413" y1="42" x2="449" y2="42" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
+            <div class="flow-layer" style="margin-bottom: 3rem;">
+                <div style="font-size: 0.75rem; color: #6b7080; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">2. Autonomous Agents</div>
+                <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+                    <div style="background: #1a1c23; border: 2px solid #4ade80; border-radius: 12px; padding: 1.5rem; min-width: 180px; position: relative;">
+                        <div style="position: absolute; top: 0.5rem; right: 0.5rem; width: 8px; height: 8px; border-radius: 50%; background: #4ade80; animation: pulse 2s infinite;"></div>
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">👁️</div>
+                        <div style="font-weight: 600; color: #fff; margin-bottom: 0.25rem;">Watchdog</div>
+                        <div style="font-size: 0.8rem; color: #6b7080;">watchdog.py • 24/7</div>
+                    </div>
+                    <div style="font-size: 2rem; color: #6b7080;">→</div>
+                    <div style="background: #1a1c23; border: 2px solid #4ade80; border-radius: 12px; padding: 1.5rem; min-width: 180px; position: relative;">
+                        <div style="position: absolute; top: 0.5rem; right: 0.5rem; width: 8px; height: 8px; border-radius: 50%; background: #4ade80; animation: pulse 2s infinite;"></div>
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🕷️</div>
+                        <div style="font-weight: 600; color: #fff; margin-bottom: 0.25rem;">Scraper</div>
+                        <div style="font-size: 0.8rem; color: #6b7080;">searcher.py • 5 min</div>
+                    </div>
+                </div>
+            </div>
 
-  <!-- Watchdog -->
-  <rect x="452" y="10" width="108" height="64" rx="8" fill="#161822" stroke="#282c3a" stroke-width="1"/>
-  <rect x="452" y="10" width="108" height="3" rx="2" fill="url(#ag)"/>
-  <text x="506" y="40" text-anchor="middle" fill="#e2e4e9" font-size="11" font-weight="600" font-family="Inter,sans-serif">Watchdog</text>
-  <text x="506" y="56" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">monitors xlsx</text>
+            <div style="text-align: center; margin: 2rem 0; color: #6b7080; font-size: 2rem;">↓</div>
 
-  <!-- arrow right -->
-  <line x1="561" y1="42" x2="596" y2="42" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
+            <div class="flow-layer" style="margin-bottom: 3rem;">
+                <div style="font-size: 0.75rem; color: #6b7080; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">3. Data Storage</div>
+                <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                    <div style="background: #1a1c23; border: 2px solid #facc15; border-radius: 12px; padding: 1.5rem; min-width: 180px;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                        <div style="font-weight: 600; color: #fff; margin-bottom: 0.25rem;">listings.xlsx</div>
+                        <div style="font-size: 0.8rem; color: #6b7080;"><span id="workflow-listings-count">419</span> guitars tracked</div>
+                    </div>
+                    <div style="background: #1a1c23; border: 2px solid #facc15; border-radius: 12px; padding: 1.5rem; min-width: 180px;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                        <div style="font-weight: 600; color: #fff; margin-bottom: 0.25rem;">JSON Cache</div>
+                        <div style="font-size: 0.8rem; color: #6b7080;">State & history</div>
+                    </div>
+                </div>
+            </div>
 
-  <!-- Email + Telegram -->
-  <rect x="599" y="10" width="140" height="64" rx="8" fill="#161822" stroke="#282c3a" stroke-width="1"/>
-  <rect x="599" y="10" width="140" height="3" rx="2" fill="#4ade80"/>
-  <text x="669" y="36" text-anchor="middle" fill="#e2e4e9" font-size="10" font-weight="600" font-family="Inter,sans-serif">Email</text>
-  <text x="669" y="50" text-anchor="middle" fill="#4ade80" font-size="9" font-weight="500" font-family="Inter,sans-serif">+ Telegram</text>
-  <text x="669" y="66" text-anchor="middle" fill="#4a4e5a" font-size="7.5" font-family="Inter,sans-serif">notifications</text>
+            <div style="text-align: center; margin: 2rem 0; color: #6b7080; font-size: 2rem;">↓</div>
 
-  <!-- ── vertical arrow: listings → Scorer ── -->
-  <line x1="353" y1="75" x2="353" y2="148" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)" stroke-dasharray="4,3"/>
+            <div class="flow-layer" style="margin-bottom: 3rem;">
+                <div style="font-size: 0.75rem; color: #6b7080; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">4. Processing Pipeline</div>
+                <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+                    <div style="background: #1a1c23; border: 2px solid #c084fc; border-radius: 12px; padding: 1.5rem; min-width: 180px;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">💰</div>
+                        <div style="font-weight: 600; color: #fff; margin-bottom: 0.25rem;">Valuation</div>
+                        <div style="font-size: 0.8rem; color: #6b7080;">valuation.py • Reverb API</div>
+                    </div>
+                    <div style="font-size: 2rem; color: #6b7080;">→</div>
+                    <a href="pages/scorer.html" style="text-decoration: none; color: inherit;">
+                    <div style="background: #1a1c23; border: 2px solid #c084fc; border-radius: 12px; padding: 1.5rem; min-width: 180px; cursor: pointer; transition: background 0.2s, border-color 0.2s;" onmouseover="this.style.background='#22243a';this.style.borderColor='#818cf8'" onmouseout="this.style.background='#1a1c23';this.style.borderColor='#c084fc'">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
+                        <div style="font-weight: 600; color: #fff; margin-bottom: 0.25rem;">Scorer</div>
+                        <div style="font-size: 0.8rem; color: #6b7080;">scorer.py • ML ranking</div>
+                    </div>
+                    </a>
+                </div>
+            </div>
 
-  <!-- ── ROW 2 ── -->
-  <!-- collection.json -->
-  <rect x="4" y="152" width="120" height="64" rx="8" fill="#161822" stroke="#2a3a5c" stroke-width="1"/>
-  <text x="64" y="180" text-anchor="middle" fill="#60a5fa" font-size="10" font-weight="600" font-family="Inter,sans-serif">collection.json</text>
-  <text x="64" y="197" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">your guitars</text>
+            <div style="text-align: center; margin: 2rem 0; color: #6b7080; font-size: 2rem;">↓</div>
 
-  <!-- arrow -->
-  <line x1="125" y1="184" x2="153" y2="184" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
-
-  <!-- Valuation -->
-  <rect x="156" y="152" width="108" height="64" rx="8" fill="#161822" stroke="#282c3a" stroke-width="1"/>
-  <rect x="156" y="152" width="108" height="3" rx="2" fill="url(#ag)"/>
-  <text x="210" y="182" text-anchor="middle" fill="#e2e4e9" font-size="11" font-weight="600" font-family="Inter,sans-serif">Valuation</text>
-  <text x="210" y="198" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">Reverb API</text>
-
-  <!-- arrow -->
-  <line x1="265" y1="184" x2="293" y2="184" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
-
-  <!-- Scorer -->
-  <rect x="296" y="152" width="114" height="64" rx="8" fill="#161822" stroke="#282c3a" stroke-width="1"/>
-  <rect x="296" y="152" width="114" height="3" rx="2" fill="url(#ag)"/>
-  <text x="353" y="182" text-anchor="middle" fill="#e2e4e9" font-size="11" font-weight="600" font-family="Inter,sans-serif">Scorer</text>
-  <text x="353" y="198" text-anchor="middle" fill="#4a4e5a" font-size="8.5" font-family="Inter,sans-serif">3-dim scoring</text>
-
-  <!-- arrow right -->
-  <line x1="411" y1="184" x2="446" y2="184" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)"/>
-
-  <!-- Recommendations (clickable) -->
-  <a href="pages/recommendations.html" style="cursor:pointer">
-    <rect x="449" y="152" width="152" height="64" rx="8" fill="#161822" stroke="#282c3a" stroke-width="1"/>
-    <rect x="449" y="152" width="152" height="3" rx="2" fill="#4ade80"/>
-    <text x="525" y="181" text-anchor="middle" fill="#e2e4e9" font-size="10.5" font-weight="600" font-family="Inter,sans-serif">Recommendations</text>
-    <text x="525" y="198" text-anchor="middle" fill="#4ade80" font-size="8.5" font-family="Inter,sans-serif" style="text-decoration:underline">top 10 picks</text>
-  </a>
-
-  <!-- ── budget.json (small box) ── -->
-  <rect x="4" y="234" width="120" height="34" rx="7" fill="#161822" stroke="#2a3a5c" stroke-width="1"/>
-  <text x="64" y="256" text-anchor="middle" fill="#60a5fa" font-size="9.5" font-weight="600" font-family="Inter,sans-serif">budget.json  ·  $20k</text>
-
-  <!-- L-shaped arrow: budget → Scorer bottom -->
-  <path d="M 125,251 L 351,251 L 351,217" fill="none" stroke="#4a4e5a" stroke-width="1.5" marker-end="url(#ah)" stroke-dasharray="4,3"/>
-
-  <!-- ── legend row ── -->
-  <!-- source dot -->
-  <rect x="4" y="265" width="8" height="8" rx="2" fill="#2a3a5c"/>
-  <text x="16" y="273" fill="#4a4e5a" font-size="7.5" font-family="Inter,sans-serif">data source</text>
-  <!-- agent dot -->
-  <rect x="90" y="265" width="8" height="8" rx="2" fill="url(#ag)"/>
-  <text x="102" y="273" fill="#4a4e5a" font-size="7.5" font-family="Inter,sans-serif">agent</text>
-  <!-- output dot -->
-  <rect x="158" y="265" width="8" height="8" rx="2" fill="#4ade80"/>
-  <text x="170" y="273" fill="#4a4e5a" font-size="7.5" font-family="Inter,sans-serif">output</text>
-  <!-- dashed -->
-  <line x1="222" y1="269" x2="258" y2="269" stroke="#4a4e5a" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <text x="264" y="273" fill="#4a4e5a" font-size="7.5" font-family="Inter,sans-serif">data flow</text>
-</svg>
-</div>
-
-<div class="sec">At a Glance</div>
-<div class="kpis">
-  <div class="kpi ci">
-    <div class="kpi-l">Total Tracked</div>
-    <div class="kpi-v">419</div>
-    <div class="kpi-s">all sites</div>
-  </div>
-  <div class="kpi cg">
-    <div class="kpi-l">Active</div>
-    <div class="kpi-v">208</div>
-    <div class="kpi-s">available now</div>
-  </div>
-  <div class="kpi ca">
-    <div class="kpi-l">On Hold</div>
-    <div class="kpi-v">211</div>
-    <div class="kpi-s">seller holding</div>
-  </div>
-  <div class="kpi cr">
-    <div class="kpi-l">Sold</div>
-    <div class="kpi-v">0</div>
-    <div class="kpi-s">confirmed sold</div>
-  </div>
-  <div class="kpi cb">
-    <div class="kpi-l">Avg Price</div>
-    <div class="kpi-v">$6.2k</div>
-    <div class="kpi-s">range $800 – $190k</div>
-  </div>
-  <div class="kpi cp">
-    <div class="kpi-l">Budget</div>
-    <div class="kpi-v">$20k</div>
-    <div class="kpi-s">$0 spent · $20k left</div>
-    <div class="bp-bg"><div class="bp-fill" style="width:0%"></div></div>
-  </div>
-</div>
-
-<div class="sec">Market Breakdown</div>
-<div class="cg">
-  <div class="cc">
-    <div class="ct">Top Brands</div>
-    <div class="cs">by listing count (click to view)</div>
-    <div id="brands"></div>
-  </div>
-  <div class="cc">
-    <div class="ct">Guitar Types</div>
-    <div class="cs">acoustic · electric · bass</div>
-    <div class="dn-w">
-      <svg id="donut" width="120" height="120" viewBox="0 0 120 120"></svg>
-      <div class="dn-leg" id="dn-leg"></div>
+            <div class="flow-layer">
+                <div style="font-size: 0.75rem; color: #6b7080; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">5. Outputs & Actions</div>
+                <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                    <div style="background: #1a1c23; border: 2px solid #f87171; border-radius: 12px; padding: 1.5rem; min-width: 180px;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">⭐</div>
+                        <div style="font-weight: 600; color: #fff; margin-bottom: 0.25rem;">Recommendations</div>
+                        <div style="font-size: 0.8rem; color: #6b7080;">Top <span id="workflow-recs-count">10</span> picks</div>
+                    </div>
+                    <div style="background: #1a1c23; border: 2px solid #f87171; border-radius: 12px; padding: 1.5rem; min-width: 180px;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📱</div>
+                        <div style="font-weight: 600; color: #fff; margin-bottom: 0.25rem;">Telegram</div>
+                        <div style="font-size: 0.8rem; color: #6b7080;">messenger.py • Real-time</div>
+                    </div>
+                    <div style="background: #1a1c23; border: 2px solid #f87171; border-radius: 12px; padding: 1.5rem; min-width: 180px;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📧</div>
+                        <div style="font-weight: 600; color: #fff; margin-bottom: 0.25rem;">Email</div>
+                        <div style="font-size: 0.8rem; color: #6b7080;">Gmail alerts</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="cc">
-    <div class="ct">By Decade</div>
-    <div class="cs">manufacturing year</div>
-    <div class="vb-w" id="decades"></div>
-  </div>
-  <div class="cc">
-    <div class="ct">Price Distribution</div>
-    <div class="cs">listing price in USD</div>
-    <div class="vb-w" id="prices"></div>
-  </div>
-</div>
 
-<div class="sec">Top 10 Recommendations</div>
-<div class="rc"><div class="rc-s">
-  <table class="rt">
-    <thead><tr>
-      <th>#</th>
-      <th>Brand</th>
-      <th>Model</th>
-      <th>Year</th>
-      <th style="text-align:right">Price</th>
-      <th>Score</th>
-      <th>Val · App · Fit</th>
-      <th style="text-align:right">+1 Year</th>
-      <th style="text-align:right">+2 Years</th>
-    </tr></thead>
-    <tbody id="recs"></tbody>
-  </table>
-</div></div>
-<a href="pages/recommendations.html" class="view-more">View Full Details →</a>
+    <script>
+        var data = {
+            stats: null,
+            recommendations: null,
+            listings: null,
+            collection: null
+        };
 
-</div>
+        function switchTab(tab, element) {
+            var tabs = document.querySelectorAll('.tab');
+            var containers = document.querySelectorAll('.table-container');
+            
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+            for (var i = 0; i < containers.length; i++) {
+                containers[i].classList.remove('active');
+            }
 
-<footer>
-  <span>&copy; 2026 Sebastien DALLAIS</span>
-  <span>vintage-guitar-collector · updated 2026-02-05 22:16</span>
-</footer>
+            if (element) element.classList.add('active');
+            document.getElementById(tab + '-table').classList.add('active');
+        }
 
-<script>
-// Data generated from listings.xlsx
-const BRANDS = [["retrofret.com", 208, "#818cf8"], ["Gibson", 61, "#c084fc"], ["Fender", 36, "#60a5fa"], ["C. F. Martin", 9, "#4ade80"], ["Guild", 7, "#fb923c"], ["Ampeg", 6, "#f472b6"], ["Rickenbacker", 5, "#fbbf24"], ["Micro-Frets", 5, "#34d399"]];
-const TYPES = [{"l": "Acoustic", "n": 45, "c": "#4ade80"}, {"l": "Electric", "n": 133, "c": "#818cf8"}, {"l": "Bass", "n": 22, "c": "#60a5fa"}, {"l": "Unknown", "n": 15, "c": "#4a4e5a"}, {"l": "Acousti-Guitar", "n": 1, "c": "#4a4e5a"}, {"l": "7-String", "n": 1, "c": "#4a4e5a"}, {"l": "Zambesi 333", "n": 1, "c": "#4a4e5a"}, {"l": "Doubleneck", "n": 1, "c": "#4a4e5a"}, {"l": "Spanish", "n": 1, "c": "#4a4e5a"}, {"l": "Electar Model M", "n": 1, "c": "#4a4e5a"}, {"l": "Profundo", "n": 1, "c": "#4a4e5a"}, {"l": "Blue Floral Telecaster", "n": 1, "c": "#4a4e5a"}, {"l": "000-28", "n": 1, "c": "#4a4e5a"}, {"l": "Competition Mustang", "n": 1, "c": "#4a4e5a"}, {"l": "AUSB-1", "n": 1, "c": "#4a4e5a"}, {"l": "Model 5246 Solo", "n": 1, "c": "#4a4e5a"}, {"l": "Telecaster", "n": 2, "c": "#4a4e5a"}, {"l": "Stratocaster", "n": 4, "c": "#4a4e5a"}, {"l": "Duo-Sonic II", "n": 2, "c": "#4a4e5a"}, {"l": "Henderson Custom Double Neck built for and extensively used by Elliott Sharp", "n": 1, "c": "#4a4e5a"}, {"l": "Bass VI", "n": 1, "c": "#4a4e5a"}, {"l": "Les Paul Artisan", "n": 1, "c": "#4a4e5a"}, {"l": "Telecaster Custom with Bigsby", "n": 2, "c": "#4a4e5a"}, {"l": "Stahl Solo Style # 8", "n": 1, "c": "#4a4e5a"}, {"l": "H-1233", "n": 1, "c": "#4a4e5a"}, {"l": "Les Paul Deluxe", "n": 2, "c": "#4a4e5a"}, {"l": "Aristocrat M-75 Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "ES-225TN Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "ES-335-12 TDC", "n": 1, "c": "#4a4e5a"}, {"l": "New Yorker Delux", "n": 1, "c": "#4a4e5a"}, {"l": "Roy Smeck Model AB104", "n": 1, "c": "#4a4e5a"}, {"l": "L-5 Master Model", "n": 1, "c": "#4a4e5a"}, {"l": "Mustang Antigua", "n": 1, "c": "#4a4e5a"}, {"l": "Flying V '67 replica", "n": 1, "c": "#4a4e5a"}, {"l": "ES-355TDC", "n": 1, "c": "#4a4e5a"}, {"l": "D-28S", "n": 1, "c": "#4a4e5a"}, {"l": "Flying V Lonnie Mack", "n": 1, "c": "#4a4e5a"}, {"l": "Coronado II Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "ES-175", "n": 1, "c": "#4a4e5a"}, {"l": "Rubendall Jazz model", "n": 1, "c": "#4a4e5a"}, {"l": "Electar Model M 7-string", "n": 1, "c": "#4a4e5a"}, {"l": "Shinano No. 40", "n": 1, "c": "#4a4e5a"}, {"l": "EH-150", "n": 1, "c": "#4a4e5a"}, {"l": "Mustang", "n": 1, "c": "#4a4e5a"}, {"l": "Singing", "n": 2, "c": "#4a4e5a"}, {"l": "Artist Award B", "n": 1, "c": "#4a4e5a"}, {"l": "L-7 P With McCarty Pickups", "n": 1, "c": "#4a4e5a"}, {"l": "H-8 8-String Bass", "n": 1, "c": "#4a4e5a"}, {"l": "Duane Eddy DE-400 B Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "LG-0", "n": 1, "c": "#4a4e5a"}, {"l": "HD-28S Custom", "n": 1, "c": "#4a4e5a"}, {"l": "Duane Eddy Jr B Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "ES-335 DOT", "n": 1, "c": "#4a4e5a"}, {"l": "D-28", "n": 2, "c": "#4a4e5a"}, {"l": "Albert 58 Flying V", "n": 1, "c": "#4a4e5a"}, {"l": "Arroyo", "n": 1, "c": "#4a4e5a"}, {"l": "Model 125 (Club 40)", "n": 1, "c": "#4a4e5a"}, {"l": "ES-175D", "n": 1, "c": "#4a4e5a"}, {"l": "L-5C", "n": 1, "c": "#4a4e5a"}, {"l": "L-5CESN", "n": 1, "c": "#4a4e5a"}, {"l": "Bean TB-1000A Artist", "n": 1, "c": "#4a4e5a"}, {"l": "Custom Shop 61 Stratocaster Relic", "n": 1, "c": "#4a4e5a"}, {"l": "LG-1", "n": 1, "c": "#4a4e5a"}, {"l": "AEB-1", "n": 1, "c": "#4a4e5a"}, {"l": "00-42", "n": 1, "c": "#4a4e5a"}, {"l": "Telecaster Custom Shop '50s Relic by Yuri Shiskov", "n": 1, "c": "#4a4e5a"}, {"l": "Zephyr Deluxe Cutaway", "n": 1, "c": "#4a4e5a"}, {"l": "Burns Nu-Sonic", "n": 1, "c": "#4a4e5a"}, {"l": "Hand Made Prototype", "n": 1, "c": "#4a4e5a"}, {"l": "Model B-6", "n": 1, "c": "#4a4e5a"}, {"l": "/Gretsch Country Gentleman Custom Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "Lesquire Junior", "n": 1, "c": "#4a4e5a"}, {"l": "BR-1 Ultratone", "n": 1, "c": "#4a4e5a"}, {"l": "Trini Lopez Standard", "n": 1, "c": "#4a4e5a"}, {"l": "ES-225 Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "Jazz Bass", "n": 1, "c": "#4a4e5a"}, {"l": "Model 335", "n": 1, "c": "#4a4e5a"}, {"l": "G6128T-53VS Duo Jet", "n": 1, "c": "#4a4e5a"}, {"l": "J-45 Koa Custom Shop", "n": 1, "c": "#4a4e5a"}, {"l": "ES-335 Dot Cherry", "n": 1, "c": "#4a4e5a"}, {"l": "LG-350T Sharp Five", "n": 1, "c": "#4a4e5a"}, {"l": "J-45", "n": 1, "c": "#4a4e5a"}, {"l": "SB-1C", "n": 1, "c": "#4a4e5a"}, {"l": "Kay Kraft Venetian Style B", "n": 1, "c": "#4a4e5a"}, {"l": "ES-335TD", "n": 1, "c": "#4a4e5a"}, {"l": "ES-330TDC Thinline", "n": 2, "c": "#4a4e5a"}, {"l": "Jaguar", "n": 2, "c": "#4a4e5a"}, {"l": "Bronco", "n": 1, "c": "#4a4e5a"}, {"l": "Bantam Deluxe E-704", "n": 1, "c": "#4a4e5a"}, {"l": "EB-2N", "n": 1, "c": "#4a4e5a"}, {"l": "Firebird III", "n": 2, "c": "#4a4e5a"}, {"l": "Mark III Deluxe", "n": 1, "c": "#4a4e5a"}, {"l": "Jazzmaster", "n": 2, "c": "#4a4e5a"}, {"l": "Mark XII", "n": 1, "c": "#4a4e5a"}, {"l": "Telecaster American Nashville B-Bender", "n": 1, "c": "#4a4e5a"}, {"l": "SG Special", "n": 2, "c": "#4a4e5a"}, {"l": "Wild Dog EG-1S Jazz Split Sound", "n": 1, "c": "#4a4e5a"}, {"l": "EB-2", "n": 1, "c": "#4a4e5a"}, {"l": "H-922", "n": 1, "c": "#4a4e5a"}, {"l": "& Henkes D-28 Shadetop", "n": 1, "c": "#4a4e5a"}, {"l": "& Henkes D-18 Phoenix 1937 Shadetop", "n": 1, "c": "#4a4e5a"}, {"l": "L-5 PN", "n": 1, "c": "#4a4e5a"}, {"l": "D-28 1937 Authentic VTS", "n": 1, "c": "#4a4e5a"}, {"l": "Grade #2", "n": 1, "c": "#4a4e5a"}, {"l": "Cruz 1929/00", "n": 1, "c": "#4a4e5a"}, {"l": "DF", "n": 1, "c": "#4a4e5a"}, {"l": "Precision Bass", "n": 4, "c": "#4a4e5a"}, {"l": "Model 360/12 Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "& Day Ne Plus Ultra Troubadour Model 2M", "n": 1, "c": "#4a4e5a"}, {"l": "American Vintage 1957 Reissue Stratocaster AVRI 6 string", "n": 1, "c": "#4a4e5a"}, {"l": "ES-175DN", "n": 1, "c": "#4a4e5a"}, {"l": "Zephyr E-312T Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "O-25C", "n": 1, "c": "#4a4e5a"}, {"l": "Glissentar Fretless", "n": 1, "c": "#4a4e5a"}, {"l": "Menezes Hermann Hauser Style", "n": 1, "c": "#4a4e5a"}, {"l": "Model M-5", "n": 1, "c": "#4a4e5a"}, {"l": "Bean Designs TB3000 Wedge", "n": 1, "c": "#4a4e5a"}, {"l": "Les Paul '56 Custom Shop", "n": 1, "c": "#4a4e5a"}, {"l": "#71-BG", "n": 1, "c": "#4a4e5a"}, {"l": "The Rail", "n": 1, "c": "#4a4e5a"}, {"l": "EB-6 6-string", "n": 1, "c": "#4a4e5a"}, {"l": "52 Esquire Custom Shop Relic Jason Smith Masterbuilt HB MBJS", "n": 1, "c": "#4a4e5a"}, {"l": "Firebird V '63 Custom Shop Murphy Lab", "n": 1, "c": "#4a4e5a"}, {"l": "Les Paul '59 Standard Custom Shop Murphy Lab", "n": 2, "c": "#4a4e5a"}, {"l": "Les Paul Custom Shop Mike Bloomfield VOS", "n": 1, "c": "#4a4e5a"}, {"l": "Les Paul '57 TV Junior Custom Shop Murphy Lab", "n": 1, "c": "#4a4e5a"}, {"l": "ES-345TD", "n": 1, "c": "#4a4e5a"}, {"l": "Gutmeier", "n": 2, "c": "#4a4e5a"}, {"l": "L-09", "n": 1, "c": "#4a4e5a"}, {"l": "SG Junior", "n": 1, "c": "#4a4e5a"}, {"l": "Dan Armstrong", "n": 1, "c": "#4a4e5a"}, {"l": "Model 1417L", "n": 1, "c": "#4a4e5a"}, {"l": "Covington", "n": 1, "c": "#4a4e5a"}, {"l": "Spacetone", "n": 1, "c": "#4a4e5a"}, {"l": "Golden Melody", "n": 1, "c": "#4a4e5a"}, {"l": "Wanderer", "n": 1, "c": "#4a4e5a"}, {"l": "Calibra", "n": 1, "c": "#4a4e5a"}, {"l": "Turner Model 1 LB Reissue", "n": 1, "c": "#4a4e5a"}, {"l": "Explorer", "n": 1, "c": "#4a4e5a"}, {"l": "1993 Plus", "n": 1, "c": "#4a4e5a"}, {"l": "Baron Bass", "n": 1, "c": "#4a4e5a"}, {"l": "Telecaster Custom Shop Masterbuilt Relic by John Cruz", "n": 1, "c": "#4a4e5a"}, {"l": "Nocaster Custom Shop Relic by Dennis Galuszka", "n": 1, "c": "#4a4e5a"}, {"l": "ES-225TD Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "OG", "n": 1, "c": "#4a4e5a"}, {"l": "Les Paul Junior", "n": 1, "c": "#4a4e5a"}, {"l": "Velazquez", "n": 2, "c": "#4a4e5a"}, {"l": "A-350", "n": 1, "c": "#4a4e5a"}, {"l": "Custom Shop B.B. King Lucille Legacy", "n": 1, "c": "#4a4e5a"}, {"l": "Les Paul Custom", "n": 1, "c": "#4a4e5a"}, {"l": "ES-335TDC", "n": 2, "c": "#4a4e5a"}, {"l": "Val-Pro 84", "n": 1, "c": "#4a4e5a"}, {"l": "Model 1104 Town & Country", "n": 1, "c": "#4a4e5a"}, {"l": "Starfire III Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "X-500 Stuart", "n": 1, "c": "#4a4e5a"}, {"l": "Model 276E", "n": 1, "c": "#4a4e5a"}, {"l": "Model 5/59 Sorella", "n": 1, "c": "#4a4e5a"}, {"l": "Doris", "n": 1, "c": "#4a4e5a"}, {"l": "Polyphon Beta", "n": 1, "c": "#4a4e5a"}, {"l": "Rock Oval", "n": 1, "c": "#4a4e5a"}, {"l": "Avalon Rock Oval", "n": 1, "c": "#4a4e5a"}, {"l": "G-70", "n": 1, "c": "#4a4e5a"}, {"l": "Oribe Calidad Suprema Model", "n": 1, "c": "#4a4e5a"}, {"l": "Everly Brothers", "n": 1, "c": "#4a4e5a"}, {"l": "#32-SGB", "n": 1, "c": "#4a4e5a"}, {"l": "D-12-20", "n": 1, "c": "#4a4e5a"}, {"l": "Style 388", "n": 1, "c": "#4a4e5a"}, {"l": "L-5N", "n": 1, "c": "#4a4e5a"}, {"l": "May Belle Style No.7", "n": 1, "c": "#4a4e5a"}, {"l": "J-185 VS Custom", "n": 1, "c": "#4a4e5a"}, {"l": "ES-350T Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "ES-125TDC Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "L-5", "n": 1, "c": "#4a4e5a"}, {"l": "ES-330TC Thinline", "n": 1, "c": "#4a4e5a"}, {"l": "J-185 Custom Shop Red Spruce", "n": 1, "c": "#4a4e5a"}, {"l": "Les Paul Special", "n": 3, "c": "#4a4e5a"}, {"l": "Duo-Sonic", "n": 1, "c": "#4a4e5a"}, {"l": "Gonzalez Lopez", "n": 1, "c": "#4a4e5a"}, {"l": "Telecaster with Bigsby", "n": 1, "c": "#4a4e5a"}, {"l": "FC28", "n": 1, "c": "#4a4e5a"}, {"l": "Model 420", "n": 1, "c": "#4a4e5a"}, {"l": "ASB-1", "n": 1, "c": "#4a4e5a"}, {"l": "AMB-1", "n": 1, "c": "#4a4e5a"}, {"l": "Musicmaster Bass", "n": 1, "c": "#4a4e5a"}, {"l": "0-18", "n": 1, "c": "#4a4e5a"}];
-const DECADES = [["1920s", 4], ["1930s", 19], ["1940s", 9], ["1950s", 23], ["1960s", 75], ["1970s", 23], ["1980s", 5], ["1990s", 8], ["2000s", 9], ["2010s", 11], ["2020s", 15]];
-const PRICES = [["$0-1k", 1], ["$1k-2k", 179], ["$2k-5k", 98], ["$5k-10k", 57], ["$10k+", 58]];
-const RECS = [{"r": 1, "b": "Bigsby", "m": "", "y": "1949", "p": 190000.0, "s": 85, "sv": 100, "sa": 80, "sf": 50, "v1": 209000, "v2": 228000}, {"r": 2, "b": "Gibson", "m": "L-5 Master Model", "y": "1924", "p": 125000.0, "s": 85, "sv": 100, "sa": 80, "sf": 50, "v1": 137500, "v2": 150000}, {"r": 3, "b": "D'Aquisto", "m": "New Yorker Delux", "y": "1967", "p": 57500.0, "s": 85, "sv": 100, "sa": 80, "sf": 50, "v1": 63250, "v2": 69000}, {"r": 4, "b": "Fender", "m": "Stratocaster", "y": "1958", "p": 57500.0, "s": 85, "sv": 100, "sa": 80, "sf": 50, "v1": 63250, "v2": 69000}, {"r": 5, "b": "C. F. Martin", "m": "00-42", "y": "1928", "p": 45000.0, "s": 85, "sv": 100, "sa": 80, "sf": 50, "v1": 49500, "v2": 54000}, {"r": 6, "b": "Gibson", "m": "ES-335TDC", "y": "1964", "p": 41500.0, "s": 85, "sv": 100, "sa": 80, "sf": 50, "v1": 45650, "v2": 49800}, {"r": 7, "b": "Vivi-Tone", "m": "", "y": "1932", "p": 35000.0, "s": 85, "sv": 100, "sa": 80, "sf": 50, "v1": 38500, "v2": 42000}, {"r": 8, "b": "Doug", "m": "Henderson Custom Double Neck built for and extensively used by Elliott Sharp", "y": "1991", "p": 30000.0, "s": 85, "sv": 100, "sa": 80, "sf": 50, "v1": 33000, "v2": 36000}, {"r": 9, "b": "C. F. Martin", "m": "D-28", "y": "1947", "p": 29500.0, "s": 85, "sv": 100, "sa": 80, "sf": 50, "v1": 32450, "v2": 35400}, {"r": 10, "b": "Gibson", "m": "Everly Brothers", "y": "1966", "p": 29500.0, "s": 85, "sv": 100, "sa": 80, "sf": 50, "v1": 32450, "v2": 35400}];
+        function formatCurrency(value) {
+            if (value == null || value === '') return '—';
+            return '$' + Math.round(value).toLocaleString();
+        }
 
-// Brands with click handlers
-(function(){
-  const max = BRANDS[0][1];
-  document.getElementById('brands').innerHTML = BRANDS.map(([name,n,c])=>{
-    const safeName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    return `<div class="bb" onclick="window.location='pages/brand-${safeName}.html'">
-       <div class="bb-l">${name}</div>
-       <div class="bb-t"><div class="bb-f" style="width:${n/max*100}%;background:${c}">${n}</div></div>
-       <div class="bb-n">${n}</div>
-     </div>`;
-  }).join('');
-})();
+        function scoreBadge(score) {
+            if (score == null) return '—';
+            var className = score >= 80 ? 'score-high' : score >= 60 ? 'score-medium' : 'score-low';
+            return '<span class="score-badge ' + className + '">' + score + '</span>';
+        }
 
-// Donut chart
-(function(){
-  const total = TYPES.reduce((s,t)=>s+t.n,0);
-  const cx=60, cy=60, R=48, r=30;
-  let angle = -90, paths = '';
-  TYPES.forEach(t=>{
-    const sweep = (t.n/total)*360;
-    const s = angle*Math.PI/180, e = (angle+sweep)*Math.PI/180;
-    const lg = sweep > 180 ? 1 : 0;
-    const ox1=cx+R*Math.cos(s), oy1=cy+R*Math.sin(s);
-    const ox2=cx+R*Math.cos(e), oy2=cy+R*Math.sin(e);
-    const ix1=cx+r*Math.cos(e), iy1=cy+r*Math.sin(e);
-    const ix2=cx+r*Math.cos(s), iy2=cy+r*Math.sin(s);
-    paths += `<path d="M${ox1},${oy1} A${R},${R} 0 ${lg},1 ${ox2},${oy2} L${ix1},${iy1} A${r},${r} 0 ${lg},0 ${ix2},${iy2}Z" fill="${t.c}" opacity=".85"/>`;
-    angle += sweep;
-  });
-  paths += `<text x="60" y="56" text-anchor="middle" fill="#e2e4e9" font-size="15" font-weight="700" font-family="Inter,sans-serif">${total}</text>`;
-  paths += `<text x="60" y="72" text-anchor="middle" fill="#4a4e5a" font-size="8" font-family="Inter,sans-serif">total</text>`;
-  document.getElementById('donut').innerHTML = paths;
-  document.getElementById('dn-leg').innerHTML = TYPES.map(t=>
-    `<div class="lg"><div class="lg-d" style="background:${t.c}"></div>${t.l}<span class="lg-n">${t.n}</span></div>`
-  ).join('');
-})();
+        function truncate(text, length) {
+            length = length || 30;
+            if (!text) return '—';
+            return text.length > length ? text.substring(0, length) + '...' : text;
+        }
 
-// Vertical bars
-function vbars(id, data, colorFn){
-  const max = Math.max(...data.map(d=>d[1]));
-  document.getElementById(id).innerHTML = data.map(([label,val])=>{
-    const h = val > 0 ? Math.max(8, (val/max)*128) : 2;
-    return `<div class="vb-c">
-              <div class="vb-n">${val}</div>
-              <div class="vb-r" style="height:${h}px;background:${colorFn(val,max)}"></div>
-              <div class="vb-l">${label}</div>
-            </div>`;
-  }).join('');
-}
-vbars('decades', DECADES, (v,m)=>`rgba(129,140,248,${.3+v/m*.7})`);
-vbars('prices',  PRICES,  (v,m)=>`rgba(192,132,252,${.3+v/m*.7})`);
+        function loadData() {
+            Promise.all([
+                fetch('/api/stats').then(function(r) { return r.json(); }),
+                fetch('/api/recommendations').then(function(r) { return r.json(); }),
+                fetch('/api/listings').then(function(r) { return r.json(); }),
+                fetch('/api/collection').then(function(r) { return r.json(); })
+            ]).then(function(results) {
+                data.stats = results[0];
+                data.recommendations = results[1];
+                data.listings = results[2];
+                data.collection = results[3];
 
-// Recommendations with click to detail page
-(function(){
-  const f$ = n => n!=null ? '$'+Number(n).toLocaleString() : 'N/A';
-  function slot(pct,color){
-    return `<span class="ds"><span class="df" style="width:${pct}%;background:${color}"></span></span>`;
-  }
-  document.getElementById('recs').innerHTML = RECS.map(r=>{
-    const sc = r.s>=80?'sg':r.s>=60?'sy':'sr';
-    return `<tr onclick="window.location='pages/recommendations.html'">
-      <td class="rk">${r.r}</td>
-      <td>${r.b}</td>
-      <td style="color:var(--muted)">${r.m}</td>
-      <td>${r.y}</td>
-      <td style="text-align:right" class="${r.p!=null?'pv':'pn'}">${f$(r.p)}</td>
-      <td><span class="sb ${sc}">${r.s}</span></td>
-      <td style="display:flex;gap:3px;align-items:center">
-        ${slot(r.sv,'#818cf8')}${slot(r.sa,'#4ade80')}${slot(r.sf,'#60a5fa')}
-      </td>
-      <td class="pv" style="text-align:right">${f$(r.v1)}</td>
-      <td class="pv" style="text-align:right">${f$(r.v2)}</td>
-    </tr>`;
-  }).join('');
-})();
-</script>
+                renderStats();
+                renderRecommendations();
+                renderListings();
+                renderCollection();
+            }).catch(function(error) {
+                console.error('Error loading data:', error);
+            });
+        }
+
+        function renderStats() {
+            var s = data.stats;
+            if (!s) return;
+
+            document.getElementById('active-listings').textContent = s.active_listings;
+            document.getElementById('recommendations').textContent = s.recommendations;
+            document.getElementById('collection-size').textContent = s.collection_size;
+            document.getElementById('budget-remaining').textContent = s.budget_remaining.toLocaleString();
+        }
+
+        function renderRecommendations() {
+            var container = document.getElementById('recommendations-table');
+            var items = data.recommendations;
+
+            if (!items || items.length === 0) {
+                container.innerHTML = '<div class="empty-state">No recommendations yet.</div>';
+                return;
+            }
+
+            var html = '<table><thead><tr>' +
+                '<th>Rank</th><th>Brand</th><th>Model</th><th>Year</th>' +
+                '<th>Price</th><th>Score</th><th>Condition</th><th>Link</th>' +
+                '</tr></thead><tbody>';
+
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                html += '<tr>' +
+                    '<td>' + (item.Rank || '—') + '</td>' +
+                    '<td>' + (item.Brand || '—') + '</td>' +
+                    '<td>' + truncate(item.Model, 25) + '</td>' +
+                    '<td>' + (item.Year || '—') + '</td>' +
+                    '<td>' + formatCurrency(item['Price ($)']) + '</td>' +
+                    '<td>' + scoreBadge(item.Score) + '</td>' +
+                    '<td>' + (item.Condition || '—') + '</td>' +
+                    '<td><a href="' + item.URL + '" target="_blank" class="link">View</a></td>' +
+                    '</tr>';
+            }
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderListings() {
+            var container = document.getElementById('listings-table');
+            var items = data.listings;
+
+            if (!items || items.length === 0) {
+                container.innerHTML = '<div class="empty-state">No listings found.</div>';
+                return;
+            }
+
+            var html = '<table><thead><tr>' +
+                '<th>ID</th><th>Brand</th><th>Model</th><th>Type</th><th>Year</th>' +
+                '<th>Price</th><th>Condition</th><th>Status</th><th>Link</th>' +
+                '</tr></thead><tbody>';
+
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                var status = item.Sold ? '❌ Sold' : item['On Hold'] ? '⏸️ Hold' : '✅ Active';
+                html += '<tr>' +
+                    '<td>' + (item.ID || '—') + '</td>' +
+                    '<td>' + (item.Brand || '—') + '</td>' +
+                    '<td>' + truncate(item.Model, 25) + '</td>' +
+                    '<td>' + (item.Type || '—') + '</td>' +
+                    '<td>' + (item.Year || '—') + '</td>' +
+                    '<td>' + formatCurrency(item.Price) + '</td>' +
+                    '<td>' + (item.Condition || '—') + '</td>' +
+                    '<td>' + status + '</td>' +
+                    '<td><a href="' + item.URL + '" target="_blank" class="link">View</a></td>' +
+                    '</tr>';
+            }
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderCollection() {
+            var container = document.getElementById('collection-table');
+            var items = data.collection;
+
+            if (!items || items.length === 0) {
+                container.innerHTML = '<div class="empty-state">No guitars in collection yet.</div>';
+                return;
+            }
+
+            var html = '<table><thead><tr>' +
+                '<th>Brand</th><th>Model</th><th>Year</th><th>Type</th>' +
+                '<th>Condition</th><th>Current Value</th><th>Value in 1Y</th><th>Acquired</th>' +
+                '</tr></thead><tbody>';
+
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                html += '<tr>' +
+                    '<td>' + (item.brand || '—') + '</td>' +
+                    '<td>' + truncate(item.model, 25) + '</td>' +
+                    '<td>' + (item.year || '—') + '</td>' +
+                    '<td>' + (item.type || '—') + '</td>' +
+                    '<td>' + (item.condition || '—') + '</td>' +
+                    '<td>' + formatCurrency(item.current_value) + '</td>' +
+                    '<td>' + formatCurrency(item.value_1y) + '</td>' +
+                    '<td>' + (item.acquired_date || '—') + '</td>' +
+                    '</tr>';
+            }
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        /* ── Budget editing ── */
+        var budgetEditState = { total: 0, spent: 0 };
+
+        function toggleBudgetEdit(e) {
+            var card = document.getElementById('budget-card');
+            if (card.classList.contains('editing')) return;
+            // Initialize edit values from current stats
+            budgetEditState.total = data.stats ? data.stats.budget_total : 0;
+            budgetEditState.spent = data.stats ? data.stats.budget_spent : 0;
+            renderBudgetEdit();
+            card.classList.add('editing');
+        }
+
+        function adjustBudget(field, delta, e) {
+            e.stopPropagation();
+            budgetEditState[field] = Math.max(0, budgetEditState[field] + delta);
+            // Keep spent <= total
+            if (budgetEditState.spent > budgetEditState.total) {
+                budgetEditState.spent = budgetEditState.total;
+            }
+            renderBudgetEdit();
+        }
+
+        function renderBudgetEdit() {
+            document.getElementById('edit-total').textContent = '$' + budgetEditState.total.toLocaleString();
+            document.getElementById('edit-spent').textContent = '$' + budgetEditState.spent.toLocaleString();
+        }
+
+        function saveBudget(e) {
+            e.stopPropagation();
+            fetch('/api/budget', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ total: budgetEditState.total, spent: budgetEditState.spent })
+            })
+            .then(function(r) {
+                if (!r.ok) throw new Error('Save failed');
+                return r.json();
+            })
+            .then(function() {
+                document.getElementById('budget-card').classList.remove('editing');
+                loadData();
+            })
+            .catch(function(err) {
+                console.error('Budget save error:', err);
+            });
+        }
+
+        function cancelBudgetEdit(e) {
+            e.stopPropagation();
+            document.getElementById('budget-card').classList.remove('editing');
+        }
+
+        loadData();
+        setInterval(loadData, 30000);
+    </script>
 </body>
 </html>
