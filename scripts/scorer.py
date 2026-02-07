@@ -38,7 +38,18 @@ XLSX_PATH   = os.path.join(_OUTPUTS, "listings.xlsx")
 BUDGET_FILE = os.path.join(_DATA, "budget.json")
 
 
+_DEFAULT_BUDGET = {
+    "total": 20000,
+    "spent": 0,
+    "weights": {"value": 0.40, "appreciate": 0.30, "fit": 0.30},
+    "top_n": 10,
+}
+
+
 def _load_budget():
+    if not os.path.exists(BUDGET_FILE):
+        print(f"  Warning: {BUDGET_FILE} not found, using defaults")
+        return dict(_DEFAULT_BUDGET)
     with open(BUDGET_FILE) as f:
         return json.load(f)
 

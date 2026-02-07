@@ -39,9 +39,8 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          if [ -f outputs/listings.xlsx ]; then
-            python3 scripts/scorer.py
-          else
+          if [ ! -f outputs/listings.xlsx ]; then
             echo "No listings.xlsx found, skipping scoring"
+            exit 0
           fi
-        continue-on-error: true
+          python3 scripts/scorer.py
