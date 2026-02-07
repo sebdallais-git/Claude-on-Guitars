@@ -44,3 +44,12 @@ jobs:
             exit 0
           fi
           python3 scripts/scorer.py
+
+      - name: Run learner (snapshot prices + compute rates)
+        run: |
+          if [ ! -f outputs/listings.xlsx ]; then
+            echo "No listings.xlsx found, skipping learning"
+            exit 0
+          fi
+          python3 scripts/learn.py
+        continue-on-error: true

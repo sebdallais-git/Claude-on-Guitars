@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-scorer — scores active retrofret listings and writes top recommendations.
+scorer — scores active listings and writes top recommendations.
 
 Scoring dimensions (weights tunable in data/budget.json):
   1. Value opportunity   — how far below (or above) the Reverb market range
-  2. Appreciation        — projected annual rate from the valuation model
-  3. Collection fit      — diversification bonus, duplicate penalty, type-gap bonus
+  2. Appreciation        — projected annual rate, with golden era boost
+  3. Collection fit      — diversification bonus, duplicate penalty, iconic model boost
+  4. Condition           — guitar condition mapped to 0-100
 
-Reads budget and weights from data/budget.json.  Writes a "Recommendations"
-sheet into outputs/listings.xlsx with the top N guitars, colour-coded by score
-and greyed out when over remaining budget.
+Backward-compatible: if 'condition' weight is missing from budget.json,
+falls back to the old 3-dimension formula.
 
 Run standalone:
     python3 scorer.py
@@ -26,13 +26,14 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
-from valuation import appreciation_rate, project_value, read_collection
+from valuation import appreciation_rate, project_value, read_collection, _parse_year
 
 # ── paths ─────────────────────────────────────────────────────────
 _SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.dirname(_SCRIPT_DIR)
 _DATA         = os.path.join(_PROJECT_ROOT, "data")
 _OUTPUTS      = os.path.join(_PROJECT_ROOT, "outputs")
+_KNOWLEDGE    = os.path.join(_DATA, "knowledge")
 
 XLSX_PATH   = os.path.join(_OUTPUTS, "listings.xlsx")
 BUDGET_FILE = os.path.join(_DATA, "budget.json")
@@ -41,7 +42,12 @@ BUDGET_FILE = os.path.join(_DATA, "budget.json")
 _DEFAULT_BUDGET = {
     "total": 20000,
     "spent": 0,
-    "weights": {"value": 0.40, "appreciate": 0.30, "fit": 0.30},
+    "weights": {
+        "value": 0.30,
+        "appreciate": 0.25,
+        "fit": 0.25,
+        "condition": 0.20,
+    },
     "top_n": 10,
 }
 
@@ -52,6 +58,98 @@ def _load_budget():
         return dict(_DEFAULT_BUDGET)
     with open(BUDGET_FILE) as f:
         return json.load(f)
+
+
+# ── condition scores ──────────────────────────────────────────────
+_CONDITION_SCORES = {
+    "mint":          100,
+    "near mint":      95,
+    "excellent+":     90,
+    "excellent":      85,
+    "excellent-":     80,
+    "very good+":     70,
+    "very good":      60,
+    "very good-":     50,
+    "good+":          40,
+    "good":           30,
+    "good-":          20,
+    "fair":           10,
+    "poor":            0,
+}
+
+
+def _score_condition(condition_str):
+    """Map a condition string to 0-100. Returns 50 for unknown conditions."""
+    if not condition_str:
+        return 50.0
+    normalized = condition_str.strip().lower()
+    # Try exact match first
+    if normalized in _CONDITION_SCORES:
+        return float(_CONDITION_SCORES[normalized])
+    # Try partial match (e.g. "Excellent Plus" → "excellent+")
+    for key, score in _CONDITION_SCORES.items():
+        if key.replace("+", " plus").replace("-", " minus") in normalized:
+            return float(score)
+        if normalized in key or key in normalized:
+            return float(score)
+    return 50.0
+
+
+# ── iconic models knowledge base ─────────────────────────────────
+_iconic_cache = None
+
+
+def _load_iconic_models():
+    """Load iconic models from data/knowledge/iconic_models.json."""
+    global _iconic_cache
+    if _iconic_cache is not None:
+        return _iconic_cache
+
+    _iconic_cache = []
+    path = os.path.join(_KNOWLEDGE, "iconic_models.json")
+    if os.path.exists(path):
+        try:
+            with open(path) as f:
+                data = json.load(f)
+            _iconic_cache = data.get("models", [])
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    return _iconic_cache
+
+
+def _match_iconic_model(brand, model):
+    """Find the best matching iconic model entry (longest model match wins).
+
+    Returns the iconic model dict or None.
+    """
+    iconic = _load_iconic_models()
+    if not iconic:
+        return None
+
+    brand_l = brand.lower()
+    model_l = model.lower()
+    best = None
+    best_len = 0
+
+    for entry in iconic:
+        entry_brand = entry["brand"].lower()
+        entry_model = entry["model"].lower()
+
+        # Brand must match (any word overlap)
+        brand_words = set(re.split(r"[^a-z]+", brand_l)) - {""}
+        iconic_words = set(re.split(r"[^a-z]+", entry_brand)) - {""}
+        if not (brand_words & iconic_words):
+            continue
+
+        # Model must be a substring match (in either direction)
+        if entry_model in model_l or model_l in entry_model:
+            match_len = len(entry_model)
+            if match_len > best_len:
+                best = entry
+                best_len = match_len
+
+    return best
 
 
 # ── read active listings ──────────────────────────────────────────
@@ -125,10 +223,24 @@ def _score_value(price, reverb_lo, reverb_hi):
     return max(0.0, 50.0 - 50.0 * overshoot)
 
 
-def _score_appreciation(brand, year):
-    """0–100: maps the 0–10 % annual rate range linearly onto 0–100."""
-    rate = appreciation_rate(brand, year)
-    return min(100.0, rate / 0.10 * 100)
+def _score_appreciation(brand, year, model=None):
+    """0–100: maps the 0–12% annual rate range linearly onto 0–100.
+
+    Adds a +20 golden era boost when the listing year falls within an
+    iconic model's golden era.
+    """
+    rate = appreciation_rate(brand, year, model=model)
+    score = min(100.0, rate / 0.12 * 100)
+
+    # Golden era boost from iconic models knowledge base
+    iconic = _match_iconic_model(brand, model or "")
+    if iconic:
+        yr = _parse_year(year)
+        era = iconic.get("golden_era")
+        if yr and era and era[0] <= yr <= era[1]:
+            score = min(100.0, score + 20)
+
+    return score
 
 
 def _score_fit(entry, collection):
@@ -137,10 +249,15 @@ def _score_fit(entry, collection):
     +20 brand not yet owned (diversification).
     +15 type is under-represented (< 25 % of collection).
     -25 exact brand+model already owned.
+    +N  popularity boost from iconic model (0-20 points).
     """
     score = 50
     if not collection:
-        return score                                # nothing to compare against
+        # No collection to compare; still apply iconic boost
+        iconic = _match_iconic_model(entry["brand"], entry["model"])
+        if iconic:
+            score += iconic.get("boost", 0)
+        return max(0, min(100, score))
 
     brands_owned = {g["brand"].lower() for g in collection}
     models_owned = {(g["brand"].lower(), g["model"].lower()) for g in collection}
@@ -158,40 +275,60 @@ def _score_fit(entry, collection):
         if type_count / len(collection) < 0.25:
             score += 15
 
+    # Iconic model popularity boost
+    iconic = _match_iconic_model(entry["brand"], entry["model"])
+    if iconic:
+        score += iconic.get("boost", 0)
+
     return max(0, min(100, score))
 
 
 def score_listing(entry, collection, budget):
     """
     Composite 0–100 score + per-dimension breakdown.
-    Returns (total, {"value": …, "appreciation": …, "fit": …}).
+    Supports 3-dim (backward-compatible) or 4-dim scoring based on
+    whether 'condition' weight exists in budget.json.
+    Returns (total, {"value": …, "appreciation": …, "fit": …, "condition": …}).
     """
     w = budget["weights"]
-    s_val = _score_value(entry["price"], entry.get("reverb_lo"), entry.get("reverb_hi"))
-    s_app = _score_appreciation(entry["brand"], entry["year"])
-    s_fit = _score_fit(entry, collection)
+    s_val  = _score_value(entry["price"], entry.get("reverb_lo"), entry.get("reverb_hi"))
+    s_app  = _score_appreciation(entry["brand"], entry["year"], model=entry.get("model"))
+    s_fit  = _score_fit(entry, collection)
+    s_cond = _score_condition(entry.get("condition", ""))
 
-    total = (
-        w["value"]      * s_val +
-        w["appreciate"] * s_app +
-        w["fit"]        * s_fit
-    )
+    if "condition" in w:
+        # 4-dimension scoring
+        total = (
+            w["value"]      * s_val +
+            w["appreciate"] * s_app +
+            w["fit"]        * s_fit +
+            w["condition"]  * s_cond
+        )
+    else:
+        # Backward-compatible 3-dimension scoring
+        total = (
+            w["value"]      * s_val +
+            w["appreciate"] * s_app +
+            w["fit"]        * s_fit
+        )
+
     return round(total, 1), {
         "value":        round(s_val, 1),
         "appreciation": round(s_app, 1),
         "fit":          round(s_fit, 1),
+        "condition":    round(s_cond, 1),
     }
 
 
 # ── write recommendations sheet ───────────────────────────────────
 REC_HEADERS = [
     "Rank", "Brand", "Model", "Type", "Year", "Price ($)",
-    "Reverb Low $", "Reverb High $", "Condition",
+    "Reverb Low $", "Reverb High $", "Condition", "Cond.",
     "Score", "Value", "Apprec.", "Fit",
     "Value in 1 Year ($)", "Value in 2 Years ($)",
     "URL",
 ]
-REC_WIDTHS = [6, 22, 26, 18, 10, 14, 14, 14, 14, 8, 8, 10, 6, 20, 22, 65]
+REC_WIDTHS = [6, 22, 26, 18, 10, 14, 14, 14, 14, 8, 8, 8, 10, 6, 20, 22, 65]
 
 HEADER_FILL  = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
 HEADER_FONT  = Font(bold=True, color="FFFFFF", size=11)
@@ -249,37 +386,42 @@ def write_recommendations(scored, budget):
             ws.cell(row=row, column=8).number_format = CURRENCY_FMT
         ws.cell(row=row, column=9, value=entry["condition"])
 
-        # score with colour
-        score_cell      = ws.cell(row=row, column=10, value=total)
+        # Condition sub-score (new "Cond." column)
+        ws.cell(row=row, column=10, value=breakdown["condition"])
+
+        # composite score with colour
+        score_cell      = ws.cell(row=row, column=11, value=total)
         score_cell.fill = _score_fill(total)
 
-        ws.cell(row=row, column=11, value=breakdown["value"])
-        ws.cell(row=row, column=12, value=breakdown["appreciation"])
-        ws.cell(row=row, column=13, value=breakdown["fit"])
+        ws.cell(row=row, column=12, value=breakdown["value"])
+        ws.cell(row=row, column=13, value=breakdown["appreciation"])
+        ws.cell(row=row, column=14, value=breakdown["fit"])
 
         # projected values (Reverb midpoint, or listing price as fallback)
         if entry.get("reverb_lo") and entry.get("reverb_hi"):
             base = (entry["reverb_lo"] + entry["reverb_hi"]) / 2
         else:
             base = price or None
-        v1y = project_value(base, entry["brand"], entry["year"], 1)
-        v2y = project_value(base, entry["brand"], entry["year"], 2)
+        v1y = project_value(base, entry["brand"], entry["year"], 1,
+                            model=entry.get("model"))
+        v2y = project_value(base, entry["brand"], entry["year"], 2,
+                            model=entry.get("model"))
         if v1y:
-            ws.cell(row=row, column=14, value=v1y)
-            ws.cell(row=row, column=14).number_format = CURRENCY_FMT
-        if v2y:
-            ws.cell(row=row, column=15, value=v2y)
+            ws.cell(row=row, column=15, value=v1y)
             ws.cell(row=row, column=15).number_format = CURRENCY_FMT
+        if v2y:
+            ws.cell(row=row, column=16, value=v2y)
+            ws.cell(row=row, column=16).number_format = CURRENCY_FMT
 
         # URL
-        url_cell           = ws.cell(row=row, column=16, value=entry["url"])
+        url_cell           = ws.cell(row=row, column=17, value=entry["url"])
         url_cell.hyperlink = entry["url"]
         url_cell.font      = URL_FONT
 
         # grey out the whole row when over remaining budget
         if over:
             grey = Font(color="808080", size=10)
-            for col in range(1, 16):
+            for col in range(1, 17):
                 ws.cell(row=row, column=col).font = grey
             url_cell.font = Font(color="808080", size=10, underline="single")
 
@@ -298,11 +440,14 @@ def run():
         return
 
     budget_remaining = budget["total"] - budget["spent"]
+    w = budget["weights"]
+    dims = "4-dim" if "condition" in w else "3-dim"
     print(f"  Budget:          ${budget['total']:>10,.0f} total | "
           f"${budget['spent']:>10,.0f} spent | "
           f"${budget_remaining:>10,.0f} remaining")
     print(f"  Collection:      {len(collection)} guitars")
     print(f"  Active listings: {len(listings)}")
+    print(f"  Scoring model:   {dims} (weights: {json.dumps(w)})")
     print(f"  Scoring …\n")
 
     scored = []
@@ -315,13 +460,13 @@ def run():
 
     # ── terminal summary ──
     print(f"  {'#':<4} {'Brand':<22} {'Model':<24} {'Year':>6} "
-          f"{'Price':>10} {'Score':>6}  Budget")
-    print(f"  {'─'*85}")
-    for rank, (entry, total, _) in enumerate(top, 1):
+          f"{'Price':>10} {'Score':>6} {'Cond':>5}  Budget")
+    print(f"  {'─'*95}")
+    for rank, (entry, total, bd) in enumerate(top, 1):
         price_str  = f"${entry['price']:>9,.0f}" if entry["price"] else "          N/A"
         budget_tag = "OVER" if (entry["price"] or 0) > budget_remaining else "ok"
         print(f"  {rank:<4} {entry['brand']:<22} {entry['model']:<24} "
-              f"{entry['year']:>6} {price_str} {total:>6.1f}  {budget_tag}")
+              f"{entry['year']:>6} {price_str} {total:>6.1f} {bd['condition']:>5.0f}  {budget_tag}")
     print()
 
     write_recommendations(top, budget)

@@ -2,9 +2,10 @@
     "total":      20000,
     "spent":      0,
     "weights": {
-        "value":      0.40,
-        "appreciate": 0.30,
-        "fit":        0.30
+        "value":      0.30,
+        "appreciate": 0.25,
+        "fit":        0.25,
+        "condition":  0.20
     },
     "top_n": 10
 }
